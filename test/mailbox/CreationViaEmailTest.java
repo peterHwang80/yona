@@ -29,9 +29,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import play.test.FakeApplication;
 import play.test.Helpers;
-import utils.JodaDateUtil;
 
-import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -127,39 +125,5 @@ public class CreationViaEmailTest {
         assertThat(comment.getParent().id)
                 .describedAs("parent")
                 .isEqualTo(issue.id);
-    }
-
-    @Test
-    public void saveReviewComment() throws Exception {
-        // Given
-        Content content = createTestContent("body", "text/plain");
-        InternetAddress[] recipients = new InternetAddress[]{
-                new InternetAddress("foo@mail.com")
-        };
-        NonRangedCodeCommentThread thread = new NonRangedCodeCommentThread();
-        thread.project = project;
-        thread.commitId = "123321";
-        thread.state = CommentThread.ThreadState.OPEN;
-        thread.createdDate = JodaDateUtil.before(1);
-        thread.save();
-
-        // When
-        ReviewComment comment = CreationViaEmail.saveReviewComment(
-                thread.asResource(),
-                member,
-                content,
-                "<message-id-3@domain>",
-                recipients);
-
-        // Then
-        assertThat(comment.author.id)
-                .describedAs("author.id")
-                .isEqualTo(member.id);
-        assertThat(comment.getContents())
-                .describedAs("contents")
-                .isEqualTo(content.body);
-        assertThat(comment.thread.id)
-                .describedAs("thread")
-                .isEqualTo(thread.id);
     }
 }

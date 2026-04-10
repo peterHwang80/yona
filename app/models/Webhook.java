@@ -15,7 +15,6 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.apache.commons.lang3.StringUtils;
 
 import models.enumeration.EventType;
-import models.enumeration.PullRequestReviewAction;
 import models.enumeration.ResourceType;
 import models.enumeration.WebhookType;
 import models.resource.GlobalResource;
@@ -379,87 +378,6 @@ public class Webhook extends Model implements ResourceConvertible {
         ArrayNode attachments = mapper.createArrayNode();
 
         attachments.add(buildAttachmentJSON(eventComment.contents, null, eventType));
-
-        return attachments;
-    }
-
-    // Pull Request
-    public void sendRequestToPayloadUrl(EventType eventType, User sender, PullRequest eventPullRequest) {
-        // Pull request webhooks are removed from the lightweighted product scope.
-        return;
-    }
-
-    private String buildRequestBody(EventType eventType, User sender, PullRequest eventPullRequest) {
-        StringBuilder requestMessage = new StringBuilder();
-        requestMessage.append(String.format("[%s] %s ", project.name, sender.name));
-
-        switch (eventType) {
-            case NEW_PULL_REQUEST:
-                requestMessage.append(Messages.get(Lang.defaultLang(), "notification.type.new.pullrequest"));
-                break;
-            case PULL_REQUEST_STATE_CHANGED:
-                requestMessage.append(Messages.get(Lang.defaultLang(), "notification.type.pullrequest.state.changed"));
-                break;
-            case PULL_REQUEST_MERGED:
-                requestMessage.append(Messages.get(Lang.defaultLang(), "notification.type.pullrequest.merged"));
-                break;
-            case PULL_REQUEST_COMMIT_CHANGED:
-                requestMessage.append(Messages.get(Lang.defaultLang(), "notification.type.pullrequest.commit.changed"));
-                break;
-        }
-
-        requestMessage.append(buildRequestMessage(RouteUtil.getUrl(eventPullRequest), String.format("#%d: %s", eventPullRequest.number, eventPullRequest.title)));
-        return requestMessage.toString();
-    }
-
-    // Pull Request Review
-    public void sendRequestToPayloadUrl(EventType eventType, User sender, PullRequest eventPullRequest, PullRequestReviewAction reviewAction) {
-        return;
-    }
-
-    private String buildRequestBody(EventType eventType, User sender, PullRequest eventPullRequest, PullRequestReviewAction reviewAction) {
-        StringBuilder requestMessage = new StringBuilder();
-        requestMessage.append(String.format("[%s] ", project.name));
-
-        switch (eventType) {
-            case PULL_REQUEST_REVIEW_STATE_CHANGED:
-                if (PullRequestReviewAction.DONE.equals(reviewAction)) {
-                    requestMessage.append(Messages.get(Lang.defaultLang(), "notification.pullrequest.reviewed", sender.name));
-                } else {
-                    requestMessage.append(Messages.get(Lang.defaultLang(), "notification.pullrequest.unreviewed", sender.name));
-                }
-                break;
-        }
-
-        requestMessage.append(buildRequestMessage(RouteUtil.getUrl(eventPullRequest), String.format("#%d: %s", eventPullRequest.number, eventPullRequest.title)));
-        return requestMessage.toString();
-    }
-
-    // Pull Request Comment
-    public void sendRequestToPayloadUrl(EventType eventType, User sender, PullRequest eventPullRequest, ReviewComment reviewComment) {
-        return;
-    }
-
-    private String buildRequestBody(EventType eventType, User sender, PullRequest eventPullRequest, ReviewComment reviewComment) {
-        StringBuilder requestMessage = new StringBuilder();
-        requestMessage.append(String.format("[%s] %s ", project.name, sender.name));
-        requestMessage.append(Messages.get(Lang.defaultLang(), "notification.type.new.simple.comment"));
-        requestMessage.append(String.format(" <%s://%s%s|", utils.Config.getScheme(), utils.Config.getHostport("localhost:9000"), RouteUtil.getUrl(reviewComment)));
-        requestMessage.append(String.format("#%d: %s>", eventPullRequest.number, eventPullRequest.title));
-        return requestMessage.toString();
-    }
-
-    // Pull Request Detail (Slack)
-    private ArrayNode buildJsonWithPullReqtuestDetails(PullRequest eventPullRequest, String requestMessage, EventType eventType) {
-        ObjectMapper mapper = new ObjectMapper();
-
-        ArrayNode detailFields = mapper.createArrayNode();
-        detailFields.add(buildTitleValueJSON(Messages.get(Lang.defaultLang(), "pullRequest.sender"), eventPullRequest.contributor.name, false));
-        detailFields.add(buildTitleValueJSON(Messages.get(Lang.defaultLang(), "pullRequest.from"), eventPullRequest.fromBranch, true));
-        detailFields.add(buildTitleValueJSON(Messages.get(Lang.defaultLang(), "pullRequest.to"), eventPullRequest.toBranch, true));
-
-        ArrayNode attachments = mapper.createArrayNode();
-        attachments.add(buildAttachmentJSON(eventPullRequest.body, detailFields, eventType));
 
         return attachments;
     }

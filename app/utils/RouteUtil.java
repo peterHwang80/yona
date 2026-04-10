@@ -12,10 +12,6 @@ import models.*;
 import models.enumeration.ResourceType;
 import models.resource.Resource;
 
-import models.SimpleCommentThread;
-import models.NonRangedCodeCommentThread;
-import models.CodeCommentThread;
-
 import utils.TemplateHelper.DiffRenderer$;
 
 public class RouteUtil {

@@ -609,23 +609,11 @@ public class NotificationEvent extends Model implements INotificationEvent {
     }
 
     private static void webhookRequest(EventType eventTypes, PullRequest pullRequest) {
-        List<Webhook> webhookList = eventTypes == PULL_REQUEST_MERGED ? Webhook.findByProject(pullRequest.toProject.id) : Webhook.findByProject(pullRequest.toProjectId);
-        for (Webhook webhook : webhookList) {
-            if (webhook.webhookType != WebhookType.JSON) {
-                // Send push event via webhook payload URLs.
-                webhook.sendRequestToPayloadUrl(eventTypes, UserApp.currentUser(), pullRequest);
-            }
-        }
+        // Pull request webhooks are removed from the lightweighted product scope.
     }
 
     private static void webhookRequest(EventType eventTypes, PullRequest pullRequest, PullRequestReviewAction reviewAction) {
-        List<Webhook> webhookList = Webhook.findByProject(pullRequest.toProject.id);
-        for (Webhook webhook : webhookList) {
-            if (webhook.webhookType != WebhookType.JSON) {
-                // Send push event via webhook payload URLs.
-                webhook.sendRequestToPayloadUrl(eventTypes, UserApp.currentUser(), pullRequest, reviewAction);
-            }
-        }
+        // Pull request review webhooks are removed from the lightweighted product scope.
     }
 
     private static void webhookRequest(EventType eventTypes, Issue issue) {
@@ -669,13 +657,7 @@ public class NotificationEvent extends Model implements INotificationEvent {
     }
 
     private static void webhookRequest(EventType eventTypes, PullRequest pullRequest, ReviewComment reviewComment) {
-        List<Webhook> webhookList = Webhook.findByProject(pullRequest.toProject.id);
-        for (Webhook webhook : webhookList) {
-            if (webhook.webhookType != WebhookType.JSON) {
-                // Send push event via webhook payload URLs.
-                webhook.sendRequestToPayloadUrl(eventTypes, UserApp.currentUser(), pullRequest, reviewComment);
-            }
-        }
+        // Pull request comment webhooks are removed from the lightweighted product scope.
     }
 
     private static void webhookRequest(Project project, List<RevCommit> commits, List<String> refNames, User sender, String title) {
@@ -690,10 +672,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         }
     }
 
-    /**
-     * @see {@link models.PullRequest#merge(models.PullRequestEventMessage)}
-     * @see {@link controllers.PullRequestApp#addNotification(models.PullRequest, models.enumeration.State, models.enumeration.State)}
-     */
     public static NotificationEvent afterPullRequestUpdated(User sender, PullRequest pullRequest, State oldState, State newState) {
         NotificationEvent notiEvent = createFrom(sender, pullRequest);
         notiEvent.title = formatReplyTitle(pullRequest);
@@ -710,40 +688,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         return notiEvent;
     }
 
-    public static NotificationEvent afterPullRequestCommitChanged(User sender, PullRequest pullRequest) {
-        NotificationEvent notiEvent = createFrom(sender, pullRequest);
-        notiEvent.title = formatReplyTitle(pullRequest);
-        notiEvent.receivers = getReceivers(sender, pullRequest);
-        notiEvent.eventType = PULL_REQUEST_COMMIT_CHANGED;
-        notiEvent.oldValue = null;
-        notiEvent.newValue = newPullRequestCommitChangedMessage(pullRequest);
-        NotificationEvent.add(notiEvent);
-
-        webhookRequest(PULL_REQUEST_COMMIT_CHANGED, pullRequest);
-
-        return notiEvent;
-    }
-
-    private static String newPullRequestCommitChangedMessage(PullRequest pullRequest) {
-        List<PullRequestCommit> commits = PullRequestCommit.find.where().eq("pullRequest", pullRequest).orderBy().desc("authorDate").findList();
-        StringBuilder builder = new StringBuilder();
-        builder.append("### ");
-        builder.append(Messages.get("notification.pullrequest.current.commits"));
-        builder.append("\n");
-        for (PullRequestCommit commit : commits) {
-            if (commit.state == PullRequestCommit.State.CURRENT) {
-                builder.append(commit.getCommitShortId());
-                builder.append(" ");
-                builder.append(commit.getCommitShortMessage());
-                builder.append("\n");
-            }
-        }
-        return builder.toString();
-    }
-
-    /**
-     * @see {@link actors.PullRequestActor#processPullRequestMerging(models.PullRequestEventMessage, models.PullRequest)}
-     */
     public static NotificationEvent afterMerge(User sender, PullRequest pullRequest, State state) {
         NotificationEvent notiEvent = createFrom(sender, pullRequest);
         notiEvent.title = formatReplyTitle(pullRequest);
@@ -751,29 +695,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         notiEvent.eventType = PULL_REQUEST_MERGED;
         notiEvent.newValue = state.state();
         NotificationEvent.add(notiEvent);
-        return notiEvent;
-    }
-
-    /**
-     * @see {@link controllers.PullRequestApp#newComment(String, String, Long, String)}
-     */
-    public static void afterNewComment(User sender, PullRequest pullRequest,
-                                       ReviewComment newComment, String urlToView) {
-        NotificationEvent.add(forNewComment(sender, pullRequest, newComment));
-    }
-
-    public static NotificationEvent forNewComment(User sender, PullRequest pullRequest, ReviewComment newComment) {
-        webhookRequest(NEW_REVIEW_COMMENT, pullRequest, newComment);
-
-        NotificationEvent notiEvent = createFrom(sender, newComment);
-        notiEvent.title = formatReplyTitle(pullRequest);
-        Set<User> receivers = getMentionedUsers(newComment.getContents());
-        receivers.addAll(getReceivers(sender, pullRequest));
-        receivers.remove(User.findByLoginId(newComment.author.loginId));
-        notiEvent.receivers = receivers;
-        notiEvent.eventType = NEW_REVIEW_COMMENT;
-        notiEvent.oldValue = null;
-        notiEvent.newValue = newComment.getContents();
         return notiEvent;
     }
 
@@ -1184,52 +1105,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         notiEvent.eventType = POSTING_BODY_CHANGED;
         notiEvent.oldValue = oldValue;
         notiEvent.newValue = post.body;
-        return notiEvent;
-    }
-
-    public static void afterNewCommitComment(Project project, ReviewComment comment,
-                                             String commitId) throws
-            IOException, SVNException, ServletException {
-        NotificationEvent.add(
-                forNewCommitComment(project, comment, commitId, UserApp.currentUser()));
-    }
-
-    public static NotificationEvent forNewCommitComment(
-            Project project, ReviewComment comment, String commitId, User author)
-            throws IOException, SVNException, ServletException {
-        Commit commit = RepositoryService.getRepository(project).getCommit(commitId);
-        Set<User> watchers = commit.getWatchers(project);
-        watchers.addAll(getMentionedUsers(comment.getContents()));
-        watchers.remove(author);
-
-        NotificationEvent notiEvent = createFrom(author, comment);
-        notiEvent.title = formatReplyTitle(project, commit);
-        notiEvent.receivers = watchers;
-        notiEvent.eventType = NEW_REVIEW_COMMENT;
-        notiEvent.oldValue = null;
-        notiEvent.newValue = comment.getContents();
-        return notiEvent;
-    }
-
-    public static void afterNewSVNCommitComment(Project project, CommitComment codeComment)
-            throws IOException, SVNException, ServletException {
-        NotificationEvent.add(forNewSVNCommitComment(project, codeComment, UserApp.currentUser()));
-    }
-
-    private static NotificationEvent forNewSVNCommitComment(
-            Project project, CommitComment codeComment, User author)
-            throws IOException, SVNException, ServletException {
-        Commit commit = RepositoryService.getRepository(project).getCommit(codeComment.commitId);
-        Set<User> watchers = commit.getWatchers(project);
-        watchers.addAll(getMentionedUsers(codeComment.contents));
-        watchers.remove(author);
-
-        NotificationEvent notiEvent = createFromCurrentUser(codeComment);
-        notiEvent.title = formatReplyTitle(project, commit);
-        notiEvent.receivers = watchers;
-        notiEvent.eventType = NEW_COMMENT;
-        notiEvent.oldValue = null;
-        notiEvent.newValue = codeComment.contents;
         return notiEvent;
     }
 

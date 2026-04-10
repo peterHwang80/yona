@@ -20,7 +20,6 @@
  */
 package playRepository;
 
-import models.PullRequest;
 import models.User;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jgit.lib.Constants;
@@ -37,8 +36,6 @@ public class GitBranch {
     private GitCommit headCommit;
 
     private User user;
-
-    private PullRequest pullRequest;
 
     public GitBranch(String name, GitCommit headCommit) {
         this.name = name;
@@ -77,13 +74,5 @@ public class GitBranch {
 
     public void setShortName(String shortName) {
         this.shortName = shortName;
-    }
-
-    public PullRequest getPullRequest() {
-        return pullRequest;
-    }
-
-    public void setPullRequest(PullRequest pullRequest) {
-        this.pullRequest = pullRequest;
     }
 }

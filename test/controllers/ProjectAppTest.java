@@ -29,7 +29,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tigris.subversion.javahl.ClientException;
 import org.tmatesoft.svn.core.SVNException;
 import play.libs.Json;
 import play.mvc.Http;
@@ -192,29 +191,6 @@ public class ProjectAppTest {
     }
 
     @Test
-    public void deletePushedBranch() {
-        //Given
-        String loginId = "yobi";
-        String projectName = "projectYobi";
-        Project project = Project.findByOwnerAndProjectName(loginId, projectName);
-        PushedBranch pushedBranch = new PushedBranch(new Date(), "testBranch", project);
-        pushedBranch.save();
-        Long id = pushedBranch.id;
-
-        //When
-        Result result = callAction(
-                controllers.routes.ref.ProjectApp.deletePushedBranch(project.owner, project.name, id),
-                fakeRequest(DELETE, "/yobi/projectYobi/deletePushedBranch/" + id)
-                        .withSession(UserApp.SESSION_USERID, User.findByLoginId(loginId).id.toString())
-                );
-
-        //Then
-        assertThat(status(result)).isEqualTo(OK);
-        assertThat(PushedBranch.find.byId(id)).isNull();
-
-    }
-
-    @Test
     public void projectSearchWithNoAcceptHeader() {
         Result result = callAction(routes.ref.ProjectApp.projects("", 1), fakeRequest());
         assertThat(status(result)).isEqualTo(NOT_ACCEPTABLE);
@@ -357,7 +333,6 @@ public class ProjectAppTest {
         // Given
         User member = User.find.byId(2L);
         Project project = Project.findByOwnerAndProjectName("yobi", "projectYobi");
-        RecentlyVisitedProjects.addNewVisitation(member, project);
 
         // When
         project.delete();

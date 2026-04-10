@@ -872,9 +872,7 @@ public class GitRepository implements PlayRepository {
 
             GitCommit commit = new GitCommit(
                     new RevWalk(getRepository()).parseCommit(ref.getObjectId()));
-            GitBranch newBranch = new GitBranch(ref.getName(), commit);
-            setTheLatestPullRequest(newBranch);
-            branches.add(newBranch);
+            branches.add(new GitBranch(ref.getName(), commit));
         }
 
         Collections.sort(branches, new Comparator<GitBranch>() {
@@ -885,11 +883,6 @@ public class GitRepository implements PlayRepository {
         });
 
         return branches;
-    }
-
-    private void setTheLatestPullRequest(GitBranch gitBranch) {
-        Project project = Project.findByOwnerAndProjectName(ownerName, projectName);
-        gitBranch.setPullRequest(PullRequest.findTheLatestOneFrom(project, gitBranch.getName()));
     }
 
     @Override

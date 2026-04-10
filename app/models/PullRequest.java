@@ -114,10 +114,6 @@ public class PullRequest extends Model implements ResourceConvertible {
     @OneToMany(cascade = CascadeType.ALL)
     public List<PullRequestCommit> pullRequestCommits;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @OrderBy("created ASC")
-    public List<PullRequestEvent> pullRequestEvents;
-
     public String lastCommitId;
 
     public String mergedCommitIdFrom;
@@ -526,25 +522,6 @@ public class PullRequest extends Model implements ResourceConvertible {
         }
     }
 
-    public void merge(final PullRequestEventMessage message) throws IOException, GitAPIException, PullRequestException {
-        Merger.MergeResult result =
-                new Merger(toBranch, fetchSourceBranch()).merge();
-
-        if (!result.conflicts()) {
-            User sender = message.getSender();
-            result.createCommit(new PersonIdent(sender.name,
-                    sender.email)).updateRef(toBranch);
-
-            // Update the pull request
-            updateMergedCommitId(result);
-            changeState(State.MERGED, sender);
-
-            // Add event
-            NotificationEvent.afterPullRequestUpdated(sender, this, State.OPEN, State.MERGED);
-            PullRequestEvent.addStateEvent(sender, this, State.MERGED);
-        }
-    }
-
     public String fetchSourceBranch() throws IOException, GitAPIException {
         String destination = getRefNameToFetchedSource();
         fetchSourceBranchTo(destination);
@@ -941,23 +918,6 @@ public class PullRequest extends Model implements ResourceConvertible {
         }
 
         return messageMap;
-    }
-
-    public static PullRequest findTheLatestOneFrom(Project fromProject, String fromBranch) {
-        ExpressionList<PullRequest> el = finder.where()
-                .eq("fromProject", fromProject)
-                .eq("fromBranch", fromBranch);
-
-        if(fromProject.isForkedFromOrigin()) {
-            el.in("toProject", fromProject, fromProject.originalProject);
-        } else {
-            el.eq("toProject", fromProject);
-        }
-
-        return el
-                .order().desc("number")
-                .setMaxRows(1)
-                .findUnique();
     }
 
     public static void changeStateToClosed() {

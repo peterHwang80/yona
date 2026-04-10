@@ -148,7 +148,7 @@ public class MarkdownAppTest extends ContextTest {
     public String getCommitUrl(RevCommit commit, Project project) {
         if (commit == null) return null;
 
-        return controllers.routes.CodeHistoryApp.show(project.owner, project.name, commit.name()).url();
+        return RouteUtil.getUrl(project);
     }
 
     @Test
