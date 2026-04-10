@@ -1,0 +1,12 @@
+[repositories]
+local
+maven-central: https://repo1.maven.org/maven2/
+maven-central-apache: https://repo.maven.apache.org/maven2/
+typesafe-ivy-releases: https://repo.typesafe.com/typesafe/ivy-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
+typesafe-maven-releases: https://repo.typesafe.com/typesafe/releases/
+sbt-plugin-releases: https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
+scm-manager-releases: https://packages.scm-manager.org/repository/releases/
+tmatesoft-releases: https://maven.tmatesoft.com/content/repositories/releases
+tmatesoft-snapshots: https://maven.tmatesoft.com/content/repositories/snapshots
+julienrf: https://julienrf.github.io/repo/
+sonatype-snapshots: https://oss.sonatype.org/content/repositories/snapshots/

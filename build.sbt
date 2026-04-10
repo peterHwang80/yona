@@ -5,6 +5,9 @@ name := """yona"""
 
 version := "1.16.0"
 
+def envJavaOpt(envKey: String, javaKey: String): Seq[String] =
+  sys.env.get(envKey).filter(_.nonEmpty).map(value => s"-D$javaKey=$value").toSeq
+
 libraryDependencies ++= Seq(
   // Add your project dependencies here,
   javaCore,
@@ -64,17 +67,14 @@ libraryDependencies ++= Seq(
 
 val projectSettings = Seq(
   // Add your own project settings here
-  resolvers += "maven central" at "https://mvnrepository.com",
-  resolvers += "maven central2" at "https://repo1.maven.org/maven2/",
-  resolvers += "maven central3" at "https://repo.maven.apache.org/maven2",
+  resolvers += "maven central" at "https://repo1.maven.org/maven2/",
+  resolvers += "maven central apache" at "https://repo.maven.apache.org/maven2/",
   resolvers += "jgit-repository" at "https://repo.eclipse.org/content/groups/releases/",
   resolvers += "java-semVer" at "https://oss.sonatype.org/content/repositories/snapshots/",
-  resolvers += "scm-manager release repository" at "https://maven.scm-manager.org/nexus/content/repositories/releases/",
+  resolvers += "scm-manager release repository" at "https://packages.scm-manager.org/repository/releases/",
   resolvers += "tmatesoft release repository" at "https://maven.tmatesoft.com/content/repositories/releases",
   resolvers += "tmatesoft snapshot repository" at "https://maven.tmatesoft.com/content/repositories/snapshots",
-  resolvers += "julienrf.github.com" at "http://julienrf.github.com/repo/",
-  resolvers += "opencast-public" at "http://nexus.opencast.org/nexus/content/repositories/public",
-  resolvers += "jfrog" at "http://repo.jfrog.org/artifactory/libs-releases/",
+  resolvers += "julienrf.github.io" at "https://julienrf.github.io/repo/",
   TwirlKeys.templateImports in Compile += "models.enumeration._",
   TwirlKeys.templateImports in Compile += "scala.collection.JavaConversions._",
   TwirlKeys.templateImports in Compile += "play.core.j.PlayMagicForJava._",
@@ -83,6 +83,10 @@ val projectSettings = Seq(
   includeFilter in (Assets, LessKeys.less) := "*.less",
   excludeFilter in (Assets, LessKeys.less) := "_*.less",
   javaOptions in test ++= Seq("-Xmx2g", "-Xms1g", "-Dfile.encoding=UTF-8"),
+  javaOptions in run ++= envJavaOpt("YONA_DATA", "yona.data"),
+  javaOptions in run ++= envJavaOpt("YONA_PORT", "http.port"),
+  javaOptions in run ++= envJavaOpt("YONA_CONFIG_FILE", "config.file"),
+  javaOptions in run ++= envJavaOpt("YONA_LOGGER_FILE", "logger.file"),
   scalacOptions ++= Seq("-feature")
 )
 

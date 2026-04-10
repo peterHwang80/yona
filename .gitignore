@@ -15,6 +15,7 @@ uploads
 repo/
 RUNNING_PID
 db
+.build/
 *.db
 .DS_Store
 *.DS_Store
