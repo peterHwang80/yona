@@ -438,13 +438,13 @@ public class ProjectApp extends Controller {
     private static List<Issue> getMentionIssueList(Project project, String query) {
         if (StringUtils.isEmpty(query)) {
             return Issue.finder.where()
-                    .eq("project.id", project.isForkedFromOrigin() ? project.originalProject.id : project.id)
+                    .eq("project.id", project.id)
                     .orderBy("createdDate desc")
                     .setMaxRows(ISSUE_MENTION_SHOW_LIMIT)
                     .findList();
         }
         return Issue.finder.where()
-                .eq("project.id", project.isForkedFromOrigin() ? project.originalProject.id : project.id)
+                .eq("project.id", project.id)
                 .or(ilike("title", "%" + query + "%"),
                         ilike("number", query + "%"))
                 .orderBy("createdDate desc")

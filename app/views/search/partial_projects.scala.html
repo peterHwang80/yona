@@ -38,19 +38,6 @@
                     @project.owner/@project.name
                     </a>
                 </div>
-                @if(project.isForkedFromOrigin){
-                <div class="search-meta-info nm np">
-                    <span>
-                       <i class="yobicon-split yobicon-white vmiddle"></i>
-                        @Messages("fork.original")
-                    </span>
-                    <span>
-                        <a href="@routes.ProjectApp.project(project.originalProject.owner, project.originalProject.name)" class="project-link">
-                            @project.originalProject.owner/@project.originalProject.name
-                        </a>
-                    </span>
-                </div>
-                }
                 <div class="search-content np">
                     <p class="search-content-body">
                         @project.overview

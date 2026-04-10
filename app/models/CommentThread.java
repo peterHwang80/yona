@@ -23,12 +23,10 @@ package models;
 import models.enumeration.ResourceType;
 import models.resource.Resource;
 import models.resource.ResourceConvertible;
-import models.support.ReviewSearchCondition;
 import play.data.format.Formats;
 import play.data.validation.Constraints;
 import play.db.ebean.Model;
 
-import javax.annotation.Nullable;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
@@ -157,23 +155,6 @@ public class CommentThread extends Model implements ResourceConvertible {
         }
 
         throw new IllegalStateException("This thread has no ReviewComment.");
-    }
-
-    /**
-     * Returns number of threads.
-     *
-     * The function finds threads matching up {@code cond} in the project having {@code projectId} and returns number of it.
-     *
-     * @param projectId
-     * @param cond
-     * @return
-     */
-
-    public static int countReviewsBy(Long projectId, @Nullable ReviewSearchCondition cond) {
-        if(cond == null){
-            cond = new ReviewSearchCondition();
-        }
-        return cond.asExpressionList(Project.find.byId(projectId)).findRowCount();
     }
 
     public static int count(PullRequest pullRequest, String commitId, String path) {

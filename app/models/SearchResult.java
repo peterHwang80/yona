@@ -40,7 +40,6 @@ public class SearchResult {
     private int milestonesCount;
     private int issueCommentsCount;
     private int postCommentsCount;
-    private int reviewsCount;
 
     private Page<User> users;
     private Page<Project> projects;
@@ -49,7 +48,6 @@ public class SearchResult {
     private Page<Milestone> milestones;
     private Page<IssueComment> issueComments;
     private Page<PostingComment> postComments;
-    private Page<ReviewComment> reviews;
 
     public List<String> makeSnippets(String contents, int threshold) {
         String lowerCaseContents = contents.toLowerCase();
@@ -240,15 +238,6 @@ public class SearchResult {
         this.postCommentsCount = postCommentsCount;
     }
 
-    public int getReviewsCount() {
-        return reviewsCount;
-    }
-
-    public void setReviewsCount(int reviewsCount) {
-        this.reviewsCount = reviewsCount;
-    }
-
-
     public Page<User> getUsers() {
         return users;
     }
@@ -303,14 +292,6 @@ public class SearchResult {
 
     public void setPostComments(Page<PostingComment> postComments) {
         this.postComments = postComments;
-    }
-
-    public Page<ReviewComment> getReviews() {
-        return reviews;
-    }
-
-    public void setReviews(Page<ReviewComment> reviews) {
-        this.reviews = reviews;
     }
 
     public SearchType getSearchType() {

@@ -270,7 +270,6 @@ public class RepositoryService {
         hooks.add(new UpdateLastPushedDate(project));
         hooks.add(new UpdateRecentlyPushedBranch(project));
         hooks.add(new IssueReferredFromCommitEvent(project, currentUser));
-        hooks.add(new PullRequestCheck(currentUser, request, project));
         hooks.add(new NotifyPushedCommits(project, currentUser));
         return PostReceiveHookChain.newChain(hooks);
     }

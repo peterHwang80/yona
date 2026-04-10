@@ -7,8 +7,6 @@
 
 package models;
 
-import actors.RelatedPullRequestMergingActor;
-import akka.actor.Props;
 import com.avaje.ebean.*;
 import controllers.UserApp;
 import errors.PullRequestException;
@@ -38,7 +36,6 @@ import play.data.validation.Constraints;
 import play.db.ebean.Model;
 import play.db.ebean.Transactional;
 import play.i18n.Messages;
-import play.libs.Akka;
 import playRepository.FileDiff;
 import playRepository.GitCommit;
 import playRepository.GitRepository;
@@ -545,8 +542,6 @@ public class PullRequest extends Model implements ResourceConvertible {
             // Add event
             NotificationEvent.afterPullRequestUpdated(sender, this, State.OPEN, State.MERGED);
             PullRequestEvent.addStateEvent(sender, this, State.MERGED);
-
-            Akka.system().actorOf(Props.create(RelatedPullRequestMergingActor.class)).tell(message, null);
         }
     }
 

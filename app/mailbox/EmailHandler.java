@@ -315,7 +315,7 @@ class EmailHandler {
                 if (thread.getProject().id.equals(project.id)) {
                     switch(thread.getType()) {
                         case COMMENT_THREAD:
-                            CreationViaEmail.saveReviewComment(msg, thread);
+                            Logger.info("Ignoring email reply to removed review thread {}", thread.getId());
                             break;
                         case ISSUE_POST:
                         case BOARD_POST:

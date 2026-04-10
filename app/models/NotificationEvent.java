@@ -52,6 +52,18 @@ import static models.enumeration.EventType.*;
 @Entity
 public class NotificationEvent extends Model implements INotificationEvent {
     private static final long serialVersionUID = 1L;
+    private static final Set<EventType> REMOVED_FEATURE_EVENT_TYPES = EnumSet.of(
+            NEW_PULL_REQUEST,
+            PULL_REQUEST_STATE_CHANGED,
+            NEW_REVIEW_COMMENT,
+            PULL_REQUEST_MERGED,
+            ISSUE_REFERRED_FROM_COMMIT,
+            PULL_REQUEST_COMMIT_CHANGED,
+            NEW_COMMIT,
+            PULL_REQUEST_REVIEW_STATE_CHANGED,
+            ISSUE_REFERRED_FROM_PULL_REQUEST,
+            REVIEW_THREAD_STATE_CHANGED
+    );
 
     @Id
     public Long id;
@@ -1611,6 +1623,7 @@ public class NotificationEvent extends Model implements INotificationEvent {
                 "left outer join notification_event t1 on t1.id = t1z_.notification_event_id " +
                 "left outer join notification_mail t2 on t2.notification_event_id = t1.id " +
                 "where t0.id = " + user.id + " and t1.id IS NOT NULL " +
+                removedFeatureEventSqlFilter() +
                 "order by t1.created DESC";
 
         return find.setRawSql(RawSqlBuilder.parse(sql).create())
@@ -1625,9 +1638,18 @@ public class NotificationEvent extends Model implements INotificationEvent {
                 "left outer join notification_event_n4user t1z_ on t1z_.n4user_id = t0.id " +
                 "left outer join notification_event t1 on t1.id = t1z_.notification_event_id " +
                 "left outer join notification_mail t2 on t2.notification_event_id = t1.id " +
-                "where t0.id = " + user.id + " and t1.id IS NOT NULL ";
+                "where t0.id = " + user.id + " and t1.id IS NOT NULL " +
+                removedFeatureEventSqlFilter();
 
         return find.setRawSql(RawSqlBuilder.parse(sql).create()).findList().size();
+    }
+
+    private static String removedFeatureEventSqlFilter() {
+        List<String> eventTypes = new ArrayList<>();
+        for (EventType eventType : REMOVED_FEATURE_EVENT_TYPES) {
+            eventTypes.add("'" + eventType.name() + "'");
+        }
+        return "and t1.event_type not in (" + StringUtils.join(eventTypes, ", ") + ") ";
     }
 
     public static void afterCommentUpdated(Comment comment) {

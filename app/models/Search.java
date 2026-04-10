@@ -73,13 +73,6 @@ public class Search {
         }
     };
 
-    private static JunctionOperation<ReviewComment> containsKeywordInReviewComment = new JunctionOperation<ReviewComment>() {
-        @Override
-        public void withJunction(String keyword, Junction<ReviewComment> junction) {
-            containsKeywordIn(keyword, junction, new String[]{"contents"});
-        }
-    };
-
     /**
      * Finds all issues that a {@code user} can see.
      * - anonymous: find from only public project's issues.
@@ -692,62 +685,6 @@ public class Search {
         Junction<PostingComment> junction = el.disjunction();
         inProjectsTemplate(keyword, user, organization, junction, "posting.project", containsKeywordInPostComment);
         equalsUserTemplate(keyword, user, junction, DEFAULT_PATH_TO_AUTHOR, containsKeywordInPostComment);
-        junction.endJunction();
-        el.orderBy().desc("createdDate");
-        return el;
-    }
-
-    public static Page<ReviewComment> findReviews(String keyword, User user, PageParam pageParam) {
-        return reviewsEL(keyword, user).findPagingList(pageParam.getSize()).getPage(pageParam.getPage());
-    }
-
-    public static int countReviews(String keyword, User user) {
-        return reviewsEL(keyword, user).findRowCount();
-    }
-
-    private static ExpressionList<ReviewComment> reviewsEL(String keyword, User user) {
-        ExpressionList<ReviewComment> el = ReviewComment.find.where();
-        Junction<ReviewComment> junction = el.disjunction();
-        inProjectsTemplate(keyword, user, junction, "thread.project", containsKeywordInReviewComment);
-        equalsUserTemplate(keyword, user, junction, "author.id", containsKeywordInReviewComment);
-        junction.endJunction();
-        el.orderBy().desc("createdDate");
-        return el;
-    }
-
-    public static Page<ReviewComment> findReviews(String keyword, User user, Project project, PageParam pageParam) {
-        return reviewsEL(keyword, user, project).findPagingList(pageParam.getSize()).getPage(pageParam.getPage());
-    }
-
-    public static int countReviews(String keyword, User user, Project project) {
-        return reviewsEL(keyword, user, project).findRowCount();
-    }
-
-    private static ExpressionList<ReviewComment> reviewsEL(String keyword, User user, Project project) {
-        ExpressionList<ReviewComment> el = ReviewComment.find.where()
-                .eq("thread.project", project);
-        if(!AccessControl.isAllowed(user, project.asResource(), Operation.READ)) {
-            el.eq("author.id", user.id);
-        }
-        containsKeywordIn(keyword, el.conjunction(), new String[]{"contents"});
-        el.orderBy().desc("createdDate");
-        return el;
-    }
-
-    public static Page<ReviewComment> findReviews(String keyword, User user, Organization organization, PageParam pageParam) {
-        return reviewsEL(keyword, user, organization).findPagingList(pageParam.getSize()).getPage(pageParam.getPage());
-    }
-
-    public static int countReviews(String keyword, User user, Organization organization) {
-        return reviewsEL(keyword, user, organization).findRowCount();
-    }
-
-    private static ExpressionList<ReviewComment> reviewsEL(String keyword, User user, Organization organization) {
-        ExpressionList<ReviewComment> el = ReviewComment.find.where()
-                .eq("thread.project.organization", organization);
-        Junction<ReviewComment> junction = el.disjunction();
-        inProjectsTemplate(keyword, user, organization, junction, "thread.project", containsKeywordInReviewComment);
-        equalsUserTemplate(keyword, user, junction, "author.id", containsKeywordInReviewComment);
         junction.endJunction();
         el.orderBy().desc("createdDate");
         return el;

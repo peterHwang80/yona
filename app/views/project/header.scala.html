@@ -74,14 +74,6 @@
                         </span>
                     }
                 </div>
-                @if(project.isForkedFromOrigin){
-                <div class="project-origin">
-                    <span class="project-origin-title">@Messages("fork.original")</span>
-                    <a href="@routes.ProjectApp.project(project.originalProject.owner, project.originalProject.name)" class="project-origin-name">
-                        @project.originalProject.owner / @project.originalProject.name
-                    </a>
-                </div>
-                }
             </div>
             <div class="project-util-wrap">
                 <ul class="project-util">
