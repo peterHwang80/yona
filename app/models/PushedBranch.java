@@ -28,9 +28,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 /**
  * @author Wansoon Park
@@ -68,12 +66,4 @@ public class PushedBranch extends Model {
         }
     }
 
-    public static List<PushedBranch> findByOwnerAndOriginalProject(User owner, Project originalProject) {
-        List<PushedBranch> branches = new ArrayList<>();
-        List<Project> forkedProjects = Project.findByOwnerAndOriginalProject(owner.loginId, originalProject);
-        for (Project forkedProject : forkedProjects) {
-            branches.addAll(forkedProject.getRecentlyPushedBranches());
-        }
-        return branches;
-    }
 }

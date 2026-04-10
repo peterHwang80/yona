@@ -385,24 +385,8 @@ public class Webhook extends Model implements ResourceConvertible {
 
     // Pull Request
     public void sendRequestToPayloadUrl(EventType eventType, User sender, PullRequest eventPullRequest) {
-        String requestBodyString = "";
-        String requestMessage = buildRequestBody(eventType, sender, eventPullRequest);
-
-        if (this.webhookType == WebhookType.DETAIL_SLACK) {
-            ArrayNode attachments = buildJsonWithPullReqtuestDetails(eventPullRequest, requestMessage, eventType);
-            requestBodyString = buildRequestJsonWithAttachments(requestMessage, attachments);
-        } else if (this.webhookType == WebhookType.DETAIL_HANGOUT_CHAT) {
-            ObjectNode thread = buildThreadJSON(eventPullRequest.asResource());
-            requestBodyString = buildRequestJsonWithThread(requestMessage, thread);
-        } else {
-            requestBodyString = buildTextPropertyOnlyJSON(requestMessage);
-        }
-
-        if (this.webhookType == WebhookType.DETAIL_HANGOUT_CHAT) {
-            sendRequest(requestBodyString, this.id, eventPullRequest.asResource());
-        } else {
-            sendRequest(requestBodyString);
-        }
+        // Pull request webhooks are removed from the lightweighted product scope.
+        return;
     }
 
     private String buildRequestBody(EventType eventType, User sender, PullRequest eventPullRequest) {
@@ -430,24 +414,7 @@ public class Webhook extends Model implements ResourceConvertible {
 
     // Pull Request Review
     public void sendRequestToPayloadUrl(EventType eventType, User sender, PullRequest eventPullRequest, PullRequestReviewAction reviewAction) {
-        String requestBodyString = "";
-        String requestMessage = buildRequestBody(eventType, sender, eventPullRequest, reviewAction);
-
-        if (this.webhookType == WebhookType.DETAIL_SLACK) {
-            ArrayNode attachments = buildJsonWithPullReqtuestDetails(eventPullRequest, requestMessage, eventType);
-            requestBodyString = buildRequestJsonWithAttachments(requestMessage, attachments);
-        } else if (this.webhookType == WebhookType.DETAIL_HANGOUT_CHAT) {
-            ObjectNode thread = buildThreadJSON(eventPullRequest.asResource());
-            requestBodyString = buildRequestJsonWithThread(requestMessage, thread);
-        } else {
-            requestBodyString = buildTextPropertyOnlyJSON(requestMessage);
-        }
-
-        if (this.webhookType == WebhookType.DETAIL_HANGOUT_CHAT) {
-            sendRequest(requestBodyString, this.id, eventPullRequest.asResource());
-        } else {
-            sendRequest(requestBodyString);
-        }
+        return;
     }
 
     private String buildRequestBody(EventType eventType, User sender, PullRequest eventPullRequest, PullRequestReviewAction reviewAction) {
@@ -470,24 +437,7 @@ public class Webhook extends Model implements ResourceConvertible {
 
     // Pull Request Comment
     public void sendRequestToPayloadUrl(EventType eventType, User sender, PullRequest eventPullRequest, ReviewComment reviewComment) {
-        String requestBodyString = "";
-        String requestMessage = buildRequestBody(eventType, sender, eventPullRequest, reviewComment);
-
-        if (this.webhookType == WebhookType.DETAIL_SLACK) {
-            ArrayNode attachments = buildJsonWithPullReqtuestDetails(eventPullRequest, requestMessage, eventType);
-            requestBodyString = buildRequestJsonWithAttachments(requestMessage, attachments);
-        } else if (this.webhookType == WebhookType.DETAIL_HANGOUT_CHAT) {
-            ObjectNode thread = buildThreadJSON(eventPullRequest.asResource());
-            requestBodyString = buildRequestJsonWithThread(requestMessage, thread);
-        } else {
-            requestBodyString = buildTextPropertyOnlyJSON(requestMessage);
-        }
-
-        if (this.webhookType == WebhookType.DETAIL_HANGOUT_CHAT) {
-            sendRequest(requestBodyString, this.id, eventPullRequest.asResource());
-        } else {
-            sendRequest(requestBodyString);
-        }
+        return;
     }
 
     private String buildRequestBody(EventType eventType, User sender, PullRequest eventPullRequest, ReviewComment reviewComment) {

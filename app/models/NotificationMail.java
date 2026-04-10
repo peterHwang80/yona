@@ -58,6 +58,18 @@ import static models.enumeration.ResourceType.ORGANIZATION;
 public class NotificationMail extends Model {
     private static final long serialVersionUID = 1L;
     private static final int RECIPIENT_NO_LIMIT = 0;
+    private static final Set<EventType> REMOVED_FEATURE_EVENT_TYPES = EnumSet.of(
+            NEW_PULL_REQUEST,
+            PULL_REQUEST_STATE_CHANGED,
+            NEW_REVIEW_COMMENT,
+            PULL_REQUEST_MERGED,
+            ISSUE_REFERRED_FROM_COMMIT,
+            PULL_REQUEST_COMMIT_CHANGED,
+            NEW_COMMIT,
+            PULL_REQUEST_REVIEW_STATE_CHANGED,
+            ISSUE_REFERRED_FROM_PULL_REQUEST,
+            REVIEW_THREAD_STATE_CHANGED
+    );
     static boolean hideAddress = true;
     private static int recipientLimit = RECIPIENT_NO_LIMIT;
 
@@ -245,6 +257,10 @@ public class NotificationMail extends Model {
         for (ListIterator<? extends INotificationEvent> it = events.listIterator(events.size());
              it.hasPrevious();) {
             INotificationEvent event = it.previous();
+
+            if (REMOVED_FEATURE_EVENT_TYPES.contains(event.getType())) {
+                continue;
+            }
 
             if (event.getType().equals(ISSUE_STATE_CHANGED) ||
                     event.getType().equals(REVIEW_THREAD_STATE_CHANGED)) {

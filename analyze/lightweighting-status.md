@@ -69,6 +69,8 @@
 - `EmailHandler`에서 review thread reply 메일 무시 처리
 - `CreationViaEmail`의 review comment 저장 메서드 삭제
 - `NotificationEvent.findByReceiver(...)`, `getNotificationsCount(...)`에서 removed-feature 이벤트 필터링
+- `NotificationMail`에서 removed-feature 이벤트 병합/발송 대상 제외
+- `Webhook`의 PR/review 관련 overload를 no-op 처리
   - 숨김 대상
     - `NEW_PULL_REQUEST`
     - `PULL_REQUEST_STATE_CHANGED`
@@ -85,6 +87,9 @@
 
 - project/organization/search/user 화면에서 fork/original project 표시 제거
 - 프로젝트 이슈 멘션 검색이 더 이상 원본 프로젝트를 따라가지 않고 현재 프로젝트만 보도록 변경
+- 프로젝트 author 집계에서 PR contributor 제외
+- project association 계산을 현재 프로젝트 단일 기준으로 축소
+- 호출 경로가 완전히 끊긴 `changeVCS`, `nextVCS`, fork association helper 제거
 - 기본 프로젝트 생성 메뉴 기준을 `issue, milestone, board`로 축소
 
 ### 7. removed-feature 테스트 제거

@@ -184,7 +184,6 @@ public class Project extends Model implements LabelOwner {
         Set<User> allAuthors = new LinkedHashSet<>();
         allAuthors.addAll(getIssueUsers());
         allAuthors.addAll(getPostingUsers());
-        allAuthors.addAll(getPullRequestUsers());
 
         return allAuthors;
     }
@@ -204,11 +203,6 @@ public class Project extends Model implements LabelOwner {
 
     private Set<User> getPostingUsers() {
         String postSql = "SELECT distinct author_id id FROM posting where project_id=" + this.id;
-        return User.find.setRawSql(RawSqlBuilder.parse(postSql).create()).findSet();
-    }
-
-    private Set<User> getPullRequestUsers() {
-        String postSql = "SELECT distinct contributor_id id FROM pull_request where to_project_id=" + this.id;
         return User.find.setRawSql(RawSqlBuilder.parse(postSql).create()).findSet();
     }
 
@@ -591,7 +585,7 @@ public class Project extends Model implements LabelOwner {
     }
 
     public boolean hasForks() {
-        return this.forkingProjects.size() > 0;
+        return this.forkingProjects != null && !this.forkingProjects.isEmpty();
     }
 
     public List<Project> getForkingProjects() {
@@ -604,13 +598,6 @@ public class Project extends Model implements LabelOwner {
     public void addFork(Project forkProject) {
         getForkingProjects().add(forkProject);
         forkProject.originalProject = this;
-    }
-
-    public static List<Project> findByOwnerAndOriginalProject(String loginId, Project originalProject) {
-        return find.where()
-                .eq("originalProject", originalProject)
-                .eq("owner", loginId)
-                .findList();
     }
 
     public void deleteFork() {
@@ -653,20 +640,6 @@ public class Project extends Model implements LabelOwner {
             user.cancelEnroll(this);
             NotificationEvent.afterMemberRequest(this, user, RequestState.ACCEPT);
         }
-    }
-
-    public void changeVCS() throws Exception {
-        if(this.forkingProjects != null) {
-            for(Project fork : forkingProjects) {
-                fork.originalProject = null;
-                fork.update();
-            }
-        }
-
-        RepositoryService.deleteRepository(this);
-        this.vcs = nextVCS();
-        RepositoryService.getRepository(this).create();
-        this.update();
     }
 
     public boolean isCodeAvailable() {
@@ -847,17 +820,6 @@ public class Project extends Model implements LabelOwner {
         return vcs.equals("GIT");
     }
 
-    public List<Project> getAssociationProjects() {
-        List<Project> projects = new ArrayList<>();
-        projects.add(this);
-        projects.addAll(forkingProjects);
-        if(isForkedFromOrigin() && originalProject.menuSetting.code
-                && originalProject.menuSetting.pullRequest) {
-                projects.add(originalProject);
-        }
-        return projects;
-    }
-
     public int getMaxNumberOfRequiredReviewerCount() {
         List<ProjectUser> members = ProjectUser.findMemberListByProject(this.id);
         if(members.size() > 1) {
@@ -886,14 +848,6 @@ public class Project extends Model implements LabelOwner {
 
     public boolean isPrivate() {
         return projectScope == ProjectScope.PRIVATE;
-    }
-
-    public String nextVCS() {
-        if(this.vcs.equals(RepositoryService.VCS_GIT)) {
-            return RepositoryService.VCS_SUBVERSION;
-        } else {
-            return RepositoryService.VCS_GIT;
-        }
     }
 
     /**
