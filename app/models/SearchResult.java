@@ -146,11 +146,6 @@ public class SearchResult {
             return;
         }
 
-        if (getReviewsCount() > 0) {
-            setSearchType(SearchType.REVIEW);
-            return;
-        }
-
         setSearchType(SearchType.ISSUE);
     }
 

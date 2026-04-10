@@ -81,9 +81,6 @@ public class SearchApp extends Controller {
             case POST_COMMENT:
                 searchResult.setPostComments(Search.findPostComments(keyword, user, pageParam));
                 break;
-            case REVIEW:
-                searchResult.setReviews(Search.findReviews(keyword, user, pageParam));
-                break;
         }
         return ok(result.render("title.search", null, null, searchResult));
     }
@@ -99,7 +96,6 @@ public class SearchApp extends Controller {
         searchResult.setMilestonesCount(Search.countMilestones(keyword, user));
         searchResult.setIssueCommentsCount(Search.countIssueComments(keyword, user));
         searchResult.setPostCommentsCount(Search.countPostComments(keyword, user));
-        searchResult.setReviewsCount(Search.countReviews(keyword, user));
         searchResult.updateSearchType();
         return searchResult;
     }
@@ -160,9 +156,6 @@ public class SearchApp extends Controller {
             case POST_COMMENT:
                 searchResult.setPostComments(Search.findPostComments(keyword, user, organization, pageParam));
                 break;
-            case REVIEW:
-                searchResult.setReviews(Search.findReviews(keyword, user, organization, pageParam));
-                break;            
         }
 
         return ok(result.render("title.search", organization, null, searchResult));
@@ -179,7 +172,6 @@ public class SearchApp extends Controller {
         searchResult.setMilestonesCount(Search.countMilestones(keyword, user, organization));
         searchResult.setIssueCommentsCount(Search.countIssueComments(keyword, user, organization));
         searchResult.setPostCommentsCount(Search.countPostComments(keyword, user, organization));
-        searchResult.setReviewsCount(Search.countReviews(keyword, user, organization));
         searchResult.updateSearchType();
         return searchResult;
     }
@@ -232,9 +224,6 @@ public class SearchApp extends Controller {
             case POST_COMMENT:
                 searchResult.setPostComments(Search.findPostComments(keyword, user, project, pageParam));
                 break;
-            case REVIEW:
-                searchResult.setReviews(Search.findReviews(keyword, user, project, pageParam));
-                break;
         }
 
         return ok(result.render("title.search", null, project, searchResult));
@@ -250,7 +239,6 @@ public class SearchApp extends Controller {
         searchResult.setMilestonesCount(Search.countMilestones(keyword, user, project));
         searchResult.setIssueCommentsCount(Search.countIssueComments(keyword, user, project));
         searchResult.setPostCommentsCount(Search.countPostComments(keyword, user, project));
-        searchResult.setReviewsCount(Search.countReviews(keyword, user, project));
         searchResult.updateSearchType();
         return searchResult;
     }

@@ -4,7 +4,7 @@
 * Copyright Yona & Yobi Authors & NAVER Corp. & NAVER LABS Corp.
 * https://yona.io
 **@
-@(user:User, projects:List[Project], issues:List[Issue], pullRequests:List[PullRequest], daysAgo:Int, selected:String)
+@(user:User, projects:List[Project], issues:List[Issue], daysAgo:Int, selected:String)
 @import utils.MD5Util
 @import models.enumeration._
 @import utils.TemplateHelper._
@@ -96,11 +96,6 @@
                             @Messages("menu.issue") @showBadgeNumberIfExist(issues.size)
                         </a>
                     </li>
-                    <li class="@isActiveTab("pullRequests")">
-                        <a href="#pullRequests" data-toggle="tab">
-                            @Messages("menu.pullRequest") @showBadgeNumberIfExist(pullRequests.size)
-                        </a>
-                    </li>
                     <li class="@isActiveTab("projects")">
                         <a href="#projects" data-toggle="tab">
                             @Messages("project.projects") @showBadgeNumberIfExist(projects.size)
@@ -152,18 +147,6 @@
                                 </ul>
                             </div>
                         </div>
-                    </div>
-                    <div id="pullRequests" class="tab-pane @isActiveTab("pullRequests")">
-                        @if(pullRequests.isEmpty) {
-                            <div class="error-wrap">
-                                <p>@Messages("userinfo.daysAgo.prefix") @Messages("pullRequest.is.empty")</p>
-                            </div>
-                        }
-                        <ul class="post-list-wrap  row-fluid">
-                        @for(pull <- pullRequests) {
-                            @partial_pullRequests(pull, pull.toProject)
-                        }
-                        </ul>
                     </div>
                     <div id="projects" class="tab-pane @isActiveTab("projects")">
                         @if(projects.isEmpty){

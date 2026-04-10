@@ -335,7 +335,7 @@ application.maxFileSize = 2147483454
 
 # Project Creation Menu Settings
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Default: "code, issue, pullRequest, review, milestone, board"
+# Default: "issue, milestone, board"
 project.creation.default.menus = "issue, milestone, board"
 
 # Social Login Support

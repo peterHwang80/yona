@@ -123,7 +123,7 @@ public class SVNRepository implements PlayRepository {
                 data.put("commiter", author);
                 data.put("commitDate", commitTime);
                 data.put("commitId", entry.getRevision());
-                data.put("commitUrl", routes.CodeHistoryApp.show(ownerName, projectName, String.valueOf(entry.getRevision())).url());
+                data.put("commitUrl", routes.ProjectApp.project(ownerName, projectName).url());
                 data.put("size", entry.getSize());
 
                 listData.put(entry.getName(), data);

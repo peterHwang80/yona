@@ -12,9 +12,6 @@ import java.net.URI
 import playRepository.DiffLine
 import playRepository.DiffLineType
 import models.CodeRange.Side
-import views.html.partial_diff_comment_on_line
-import views.html.partial_diff_line
-import views.html.git.partial_pull_request_event
 import models._
 import java.net.URLEncoder
 import java.util
@@ -246,10 +243,6 @@ object TemplateHelper {
     }
 
     def getURL(viewType:String, project:Project, branchName:String, path:String) = viewType match {
-      case "history" =>
-        routes.CodeHistoryApp.history(project.owner, project.name, URLEncoder.encode(branchName, "UTF-8"), null)
-      case "code" =>
-        routes.CodeApp.codeBrowserWithBranch(project.owner, project.name, URLEncoder.encode(branchName, "UTF-8"), path)
       case _ =>
         "#"
     }
@@ -264,8 +257,7 @@ object TemplateHelper {
   }
 
   def urlToCompare(project: Project, compare: String) = {
-    val commits = compare.split(PullRequest.DELIMETER)
-    routes.CompareApp.compare(project.owner, project.name, commits(0), commits(1)).url
+    routes.ProjectApp.project(project.owner, project.name).url
   }
 
   def getPercent(unit:Double, total:Double) = {
@@ -294,208 +286,39 @@ object TemplateHelper {
   }
 
   object DiffRenderer {
-
-    def removedWord(word: String) = "<span class='remove'>" + word + "</span>"
-
-    def addedWord(word: String) = "<span class='add'>" + word + "</span>"
-
-    def mergeList(a: List[String], b: List[String]) = {
-        a.zip(b).map(v => v._1 + v._2)
-    }
-
-    /*
-    def wordDiffLinesInHtml(diffList: List[Diff]): List[String] =
-      diffList match {
-        case Nil => List("", "")
-        case head :: tail => mergeList(wordDiffLineInHtml(head), wordDiffLinesInHtml(tail))
-      }
-
-    def wordDiffLineInHtml(diff: Diff) =
-      diff.operation match {
-        case DELETE => List(removedWord(diff.text), "")
-        case INSERT => List("", addedWord(diff.text))
-        case _ => List(diff.text, diff.text)
-      }
-
-    def writeHtmlLine(klass: String, indicator: String, numA: Integer, numB: Integer, html: String, commentsOnLine: List[_ <: CodeCommentThread]) = {
-      partial_diff_line_html(klass, indicator, numA, numB, html) + (if(commentsOnLine != null) partial_diff_comment_on_line(commentsOnLine).body else "")
-    }
-
-    def renderWordDiff(lineA: DiffLine, lineB: DiffLine, comments: Map[String, List[_ <: CodeCommentThread]]) = {
-      val lines = wordDiffLinesInHtml((new DiffMatchPatch()).diffMain(lineA.content, lineB.content).toList)
-      writeHtmlLine(lineA.kind.toString.toLowerCase, "-", null, lineA.numA + 1, lines(0), threadsOrEmpty(comments, threadKey(lineA.file.pathA, "remove", lineA.numA + 1))) + writeHtmlLine(lineB.kind.toString.toLowerCase, "+", lineB.numB + 1, null, lines(1), threadsOrEmpty(comments, threadKey(lineB.file.pathB, "add", lineB.numB + 1)))
-    }
-    */
-
-    /* Not implemented yet */
-    def renderWordDiff(lineA: DiffLine, lineB: DiffLine, comments: Map[String, List[CodeCommentThread]], isEndOfLineMissing: DiffLine => Boolean) =
-      renderLine(lineA, comments, isEndOfLineMissing) + renderLine(lineB, comments, isEndOfLineMissing)
-
-    def renderTwoLines(lineA: DiffLine, lineB: DiffLine, comments: Map[String, List[CodeCommentThread]], isEndOfLineMissing: DiffLine => Boolean) =
-      (lineA.kind, lineB.kind) match {
-        case (DiffLineType.REMOVE, DiffLineType.ADD) => renderWordDiff(lineA, lineB, comments, isEndOfLineMissing)
-        case _ => renderLine(lineA, comments, isEndOfLineMissing) + renderLine(lineB, comments, isEndOfLineMissing)
-      }
-
-    def threadKey(path: String, side: Side, lineNum: Integer) =
-      path + ":" + side + ":" + lineNum
-
-    def threadsOrEmpty(threads: Map[String, List[CodeCommentThread]], key: String) =
-      if (threads != null && threads.contains(key)) threads(key) else Nil
-
-    def threadsOnAddLine(line: DiffLine, threads: Map[String, List[CodeCommentThread]]) =
-      threadsOrEmpty(threads, threadKey(line.file.pathB, Side.B, line.numB + 1))
-
-    def threadsOnRemoveLine(line: DiffLine, threads: Map[String, List[CodeCommentThread]]) =
-      threadsOrEmpty(threads, threadKey(line.file.pathA, Side.A, line.numA + 1))
-
-    def threadsOnContextLine(line: DiffLine, threads: Map[String, List[CodeCommentThread]]) =
-      threadsOrEmpty(threads, threadKey(line.file.pathB, Side.B, line.numB + 1))
-
-    def indicator(line: DiffLine) =
-      line.kind match {
-        case DiffLineType.ADD => "+"
-        case DiffLineType.REMOVE => "-"
-        case _ => " "
-      }
-
-    val noNewlineAtEof = "<span style='color: red'>(" + Messages.get("code.eolMissing") + ")</span>"
-
-    def eolMissingChecker(diff: FileDiff)(line: DiffLine) =
-      line.kind match {
-        case DiffLineType.REMOVE => (line.numA + 1) == diff.a.size && diff.a.isMissingNewlineAtEnd
-        case _ => (line.numB + 1) == diff.b.size && diff.b.isMissingNewlineAtEnd
-      }
-
-    def renderLine(line: DiffLine, num: Integer, numA: Integer, numB: Integer,
-                   threads: List[CodeCommentThread], isEndOfLineMissing: DiffLine => Boolean) =
-      partial_diff_line(line.kind.toString.toLowerCase, indicator(line), num, numA, numB, line.content, isEndOfLineMissing(line)) +
-      partial_diff_comment_on_line(threads).body.trim
-
-    def renderLine(line: DiffLine, threads: Map[String, List[CodeCommentThread]], isEndOfLineMissing: DiffLine => Boolean): String =
-      line.kind match {
-        case DiffLineType.ADD =>
-          renderLine(line, line.numB + 1, null, line.numB + 1, threadsOnAddLine(line, threads), isEndOfLineMissing)
-        case DiffLineType.REMOVE =>
-          renderLine(line, line.numA + 1, line.numA + 1, null, threadsOnRemoveLine(line, threads), isEndOfLineMissing)
-        case _ =>
-          renderLine(line, line.numB + 1, line.numA + 1, line.numB + 1, threadsOnContextLine(line, threads), isEndOfLineMissing)
-      }
-
-    @tailrec def _renderLines(progress: String, lines: List[DiffLine], comments: Map[String, List[CodeCommentThread]], isEndOfLineMissing: DiffLine => Boolean): String =
-      lines match {
-        case Nil => progress
-        case first::Nil => progress + renderLine(first, comments, isEndOfLineMissing)
-        case first::second::tail => _renderLines(progress + renderTwoLines(first, second, comments, isEndOfLineMissing), tail, comments, isEndOfLineMissing)
-      }
-
-    def renderLines(lines: List[DiffLine], comments: Map[String, List[CodeCommentThread]], isEndOfLineMissing: DiffLine => Boolean): String =
-      _renderLines("", lines, comments, isEndOfLineMissing)
-
     def isAuthorComment(commentId: String) = if(commentId == UserApp.currentUser().loginId) "author"
 
     def shortId(commitId: String) = commitId.substring(0, Math.min(7, commitId.size))
 
-    @tailrec
-    def renderNonRangedThreads(threads: List[models.CommentThread], commitId: String, html: play.twirl.api.Html): play.twirl.api.Html =
-      threads match {
-        case head :: tail =>
-          renderNonRangedThreads(
-            tail,
-            commitId,
-            head match {
-              case (thread: models.NonRangedCodeCommentThread)
-                if commitId == null || commitId == thread.commitId => new Html(List(html, partial_comment_thread(thread)))
-              case _ => html
-            }
-          )
-        case _ => html
-      }
-
-    @tailrec
-    def _renderEventsOnPullRequest(pull: PullRequest, events: List[PullRequestEvent],
-                                   html: play.twirl.api.Html): play.twirl.api.Html =
-      events match {
-        case head :: tail =>
-          _renderEventsOnPullRequest(pull, tail,
-            new Html(List(html, partial_pull_request_event(pull, head))))
-        case _ => html
-      }
-
-    def renderEventsOnPullRequest(pull: PullRequest) =
-      _renderEventsOnPullRequest(pull, pull.pullRequestEvents.toList, play.twirl.api.Html(""))
-
     def urlToCommentThread(thread: CommentThread) = {
-        urlToContainer(thread) + "#thread-" + thread.id
+      val container = urlToContainer(thread)
+      if (container == "#") {
+        "#"
+      } else {
+        container + "#thread-" + thread.id
+      }
     }
 
     def urlToContainer(thread: CommentThread) = {
-      // Before access any field in thread.project, thread.pullRequest and
-      // thread.pullRequest.project refresh() should be called because lazy
-      // loading does not work for direct field access from Scala source files.
-      // See http://www.playframework.com/documentation/2.2.x/JavaEbean
-      if (thread.isOnPullRequest) {
-          thread.pullRequest.refresh()
-          thread.pullRequest.toProject.refresh()
-          urlToPullRequest(thread, thread.pullRequest, thread.pullRequest.toProject)
+      if (thread == null || thread.project == null) {
+        "#"
       } else {
-          thread.project.refresh()
-          urlToCommit(thread, thread.project)
-      }
-    }
-
-    def urlToPullRequest(thread: CommentThread, pullRequest: PullRequest, project: Project) = {
-      thread match {
-        case (t: CodeCommentThread) if t.isOnAllChangesOfPullRequest =>
-          routes.PullRequestApp.specificChange(
-              project.owner,
-              project.name,
-              pullRequest.number,
-              t.isOutdated match {
-                case true => t.commitId // This link may occur 404 Not Found because the repository does not have the commit matches with the given commitId.
-                case false => ""
-              })
-        case (t: CodeCommentThread) if t.isOnChangesOfPullRequest =>
-          routes.PullRequestApp.specificChange(project.owner, project.name, pullRequest.number, t.commitId)
-        case (t: models.NonRangedCodeCommentThread) if t.isOnChangesOfPullRequest =>
-          routes.PullRequestApp.specificChange(project.owner, project.name, pullRequest.number, t.commitId)
-        case (t: CommentThread) =>
-          routes.PullRequestApp.pullRequestChanges(project.owner, project.name, pullRequest.number)
-        case _ => ""
-      }
-    }
-
-    def urlToCommit(thread: CommentThread, project: Project) = {
-      thread match {
-        case (t: models.NonRangedCodeCommentThread) =>
-          routes.CodeHistoryApp.show(project.owner, project.name, t.commitId)
-        case (t: CodeCommentThread) =>
-          routes.CodeHistoryApp.show(project.owner, project.name, t.commitId)
-        case _ => ""
+        thread.project.refresh()
+        routes.ProjectApp.project(thread.project.owner, thread.project.name).url
       }
     }
 
     def urlToPostNewComment(thread: CommentThread) = {
-      thread.project.refresh()
-      if(thread.isOnPullRequest){
-        routes.PullRequestApp.newComment(thread.project.owner, thread.project.name, thread.pullRequest.id, _getCommitId(thread))
+      if (thread == null || thread.project == null) {
+        "#"
       } else {
-        routes.CodeHistoryApp.newComment(thread.project.owner, thread.project.name, _getCommitId(thread))
-      }
-    }
-
-    def _getCommitId(thread: CommentThread) = {
-      thread match {
-        case (t: CodeCommentThread) =>
-          t.commitId
-        case (t: models.NonRangedCodeCommentThread) =>
-          t.commitId
-        case _ => ""
+        thread.project.refresh()
+        routes.ProjectApp.project(thread.project.owner, thread.project.name)
       }
     }
 
     def getResourceType(thread: CommentThread) = {
-      if(thread.isOnPullRequest){
+      if(thread != null && thread.isOnPullRequest){
         models.enumeration.ResourceType.REVIEW_COMMENT
       } else {
         models.enumeration.ResourceType.COMMIT_COMMENT
@@ -645,7 +468,7 @@ object TemplateHelper {
   }
 
   def containsInDefaultMenus(menuName: String) = {
-    val menus = play.Configuration.root.getString("project.default.menus.when.create", "code, issue, pullRequest, review, milestone, board").replaceAll(" ", "").split(",")
+    val menus = play.Configuration.root.getString("project.creation.default.menus", "issue, milestone, board").replaceAll(" ", "").split(",")
     menus.toStream.contains(menuName)
 
   }

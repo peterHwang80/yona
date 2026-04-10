@@ -25,7 +25,6 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import playRepository.RepositoryService;
 import utils.AccessControl;
 import utils.Config;
 import utils.JodaDateUtil;
@@ -43,34 +42,6 @@ import static utils.CacheStore.projectMap;
 
 public class ProjectApi extends Controller {
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
-    @IsAllowed(Operation.DELETE)
-    public static Result exports(String owner, String projectName) {
-        Project project = Project.findByOwnerAndProjectName(owner, projectName);
-
-        ObjectNode json = Json.newObject();
-        json.put("owner", project.owner);
-        json.put("projectName", project.name);
-        json.put("projectDescription", project.overview);
-        json.put("projectCreatedDate", getDateString(project.createdDate));
-        json.put("projectVcs", project.vcs);
-        json.put("projectScope", getProjectScope(project));
-        json.put("assignees", toJson(getAssginees(project).toArray()));
-        json.put("authors", toJson(getAuthors(project).toArray()));
-        json.put("memberCount", project.members().size());
-        json.put("members", project.members().size());
-        Optional.ofNullable(project.members())
-                .ifPresent(members -> json.put("members", composeMembersJson(project)));
-        json.put("issueCount", project.issues.size());
-        json.put("postCount", project.posts.size());
-        json.put("milestoneCount", project.milestones.size());
-        json.put("labels", getAllLabels(project.issueLabels));
-        json.put("issues", composePosts(project, Issue.finder));
-        json.put("posts", composePosts(project, Posting.finder));
-        json.put("milestones", toJson(project.milestones.stream()
-                .map(ProjectApi::getMilestoneNode).collect(Collectors.toList())));
-        return ok(json);
-    }
 
     private static String getProjectScope(Project project) {
         switch (project.projectScope) {
@@ -141,7 +112,7 @@ public class ProjectApi extends Controller {
         project.owner = owner;
         project.name = json.findValue("projectName").asText();
         project.overview = getProjectDescription(json);
-        project.vcs = getProjectVcs(json);
+        project.vcs = "";
         project.createdDate = IssueApi.parseDateString(json.findValue("projectCreatedDate"));
         project.projectScope = parseProjectScope(json);
 
@@ -150,7 +121,6 @@ public class ProjectApi extends Controller {
         }
 
         ProjectUser.assignRole(User.SITE_MANAGER_ID, Project.create(project), RoleType.SITEMANAGER);
-        RepositoryService.createRepository(project);
 
         // TODO project settings 도 export를 하는 것이 좋을 것 같다
         saveMenuSettingsToDefault(project);
@@ -210,14 +180,6 @@ public class ProjectApi extends Controller {
         }
     }
 
-    private static String getProjectVcs(JsonNode json) {
-        JsonNode projectVcs = json.findValue("projectVcs");
-        if (projectVcs == null) {
-            return "GIT";
-        }
-        return projectVcs.asText();
-    }
-
     private static JsonNode createdProjectNode(Project project) {
         ObjectNode created = Json.newObject();
         created.put("id", project.id);
@@ -230,10 +192,10 @@ public class ProjectApi extends Controller {
 
     private static void saveMenuSettingsToDefault(Project project) {
         ProjectMenuSetting projectMenuSetting = new ProjectMenuSetting();
-        projectMenuSetting.code = true;
+        projectMenuSetting.code = false;
         projectMenuSetting.issue = true;
-        projectMenuSetting.pullRequest = true;
-        projectMenuSetting.review = true;
+        projectMenuSetting.pullRequest = false;
+        projectMenuSetting.review = false;
         projectMenuSetting.milestone = true;
         projectMenuSetting.board = true;
         projectMenuSetting.project = project;

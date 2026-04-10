@@ -18,16 +18,12 @@ import models.enumeration.Operation;
 import models.enumeration.ResourceType;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jgit.lib.ObjectId;
 import play.data.Form;
 import play.db.ebean.Transactional;
 import play.libs.Json;
 import play.mvc.Call;
 import play.mvc.Result;
 import play.mvc.With;
-import playRepository.BareCommit;
-import playRepository.BareRepository;
-import playRepository.RepositoryService;
 import utils.*;
 import views.html.board.create;
 import views.html.board.edit;
@@ -40,7 +36,6 @@ import java.io.IOException;
 import java.util.*;
 
 import static com.avaje.ebean.Expr.icontains;
-import static controllers.MigrationApp.composePlainCommentsJson;
 import static play.libs.Json.toJson;
 import static utils.JodaDateUtil.getOptionalShortDate;
 
@@ -165,46 +160,7 @@ public class BoardApp extends AbstractPostingApp {
         boolean isAllowedToNotice =
                 AccessControl.isProjectResourceCreatable(UserApp.currentUser(), project, ResourceType.BOARD_NOTICE);
 
-        String preparedBodyText = "";
-        if(readmeEditRequested() && projectHasReadme(project)){
-            preparedBodyText = BareRepository.readREADME(project);
-        }
-
-        if(issueTemplateEditRequested()){
-            preparedBodyText = StringUtils.defaultIfBlank(project.getIssueTemplate(), "");
-        }
-
-        if (textFileEditRequested()) {
-            boolean isAllowedToFileEdit =
-                    AccessControl.isProjectResourceCreatable(UserApp.currentUser(), project, ResourceType.COMMIT);
-            if(!isAllowedToFileEdit){
-                return forbidden(ErrorViews.Forbidden.render("error.forbidden", project));
-            }
-            preparedBodyText = GitUtil.getReadTextFile(project,
-                    getBranchNameFromQueryString(), request().getQueryString("path"));
-        }
-
-        return ok(create.render("post.new", new Form<>(Posting.class), project, isAllowedToNotice, preparedBodyText));
-    }
-
-    private static boolean projectHasReadme(Project project) {
-        return project.readme() != null;
-    }
-
-    private static boolean readmeEditRequested() {
-        return request().getQueryString("readme") != null;
-    }
-
-    private static boolean issueTemplateEditRequested() {
-        return request().getQueryString("issueTemplate") != null;
-    }
-
-    private static boolean textFileEditRequested() {
-        return request().getQueryString("path") != null;
-    }
-
-    private static String getBranchNameFromQueryString() {
-        return request().getQueryString("branch");
+        return ok(create.render("post.new", new Form<>(Posting.class), project, isAllowedToNotice, ""));
     }
 
     @Transactional
@@ -230,66 +186,17 @@ public class BoardApp extends AbstractPostingApp {
         post.setAuthor(UserApp.currentUser());
         post.project = project;
 
-        if (post.readme) {
-            Posting readmePosting = Posting.findREADMEPosting(project);
-            if (readmePosting != null) {
-                return editPost(userName, projectName, readmePosting.getNumber());
-            } else {
-                commitReadmeFile(project, post);
-            }
-        }
-
-        if (post.issueTemplate.equals("true")) {
-            commitIssueTemplateFile(project, post);
-            return redirect(routes.ProjectApp.project(project.owner, projectName));
-        }
-
-        if(StringUtils.isNotEmpty(post.path) && UserApp.currentUser().isMemberOf(project)){
-            GitUtil.commitTextFile(project, post.branch, post.path,
-                    LineEnding.changeLineEnding(post.body, post.lineEnding), post.title);
-            return redirect(routes.CodeApp.codeBrowserWithBranch(project.owner, project.name, post.branch, HttpUtil.getEncodeEachPathName(post.path)));
-        }
-
         post.save();
         attachUploadFilesToPost(post.asResource());
         NotificationEvent.afterNewPost(post);
 
-        if (post.readme) {
-            return redirect(routes.ProjectApp.project(userName, projectName));
-        }
         return redirect(routes.BoardApp.post(project.owner, project.name, post.getNumber()));
-    }
-
-    private static void commitReadmeFile(Project project, Posting post){
-        BareCommit bare = new BareCommit(project, UserApp.currentUser());
-        try{
-            ObjectId objectId = bare.commitTextFile("README.md", post.body, post.title);
-            play.Logger.debug("Online Commit: README " + project.name + ":" + objectId);
-        } catch (IOException e) {
-            e.printStackTrace();
-            play.Logger.error(e.getMessage());
-        }
-    }
-
-    private static void commitIssueTemplateFile(Project project, Posting post){
-        BareCommit bare = new BareCommit(project, UserApp.currentUser());
-        try{
-            ObjectId objectId = bare.commitTextFile("ISSUE_TEMPLATE.md", post.body, post.title);
-            play.Logger.debug("Online Commit: ISSUE_TEMPLATE " + project.name + ":" + objectId);
-        } catch (IOException e) {
-            e.printStackTrace();
-            play.Logger.error(e.getMessage());
-        }
     }
 
     @IsAllowed(value = Operation.READ, resourceType = ResourceType.BOARD_POST)
     public static Result post(String userName, String projectName, Long number) {
         Project project = Project.findByOwnerAndProjectName(userName, projectName);
         Posting post = Posting.findByNumber(project, number);
-
-        if(post.readme && RepositoryService.VCS_GIT.equals(project.vcs)){
-            post.body = StringUtils.defaultString(BareRepository.readREADME(project));
-        }
 
         if (request().getHeader("Accept").contains("application/json")) {
             ObjectNode json = Json.newObject();
@@ -300,7 +207,7 @@ public class BoardApp extends AbstractPostingApp {
             json.put("created_at", post.createdDate.getTime());
             json.put("body", post.body);
             json.put("attachments", toJson(Attachment.findByContainer(post.asResource())));
-            json.put("comments", toJson(composePlainCommentsJson(post, ResourceType.NONISSUE_COMMENT)));
+            json.put("comments", toJson(controllers.api.ProjectApi.composePlainCommentsJson(post)));
             return ok(json);
         }
 
@@ -323,9 +230,6 @@ public class BoardApp extends AbstractPostingApp {
         Form<Posting> editForm = new Form<>(Posting.class).fill(posting);
         boolean isAllowedToNotice = ProjectUser.isAllowedToNotice(UserApp.currentUser(), project);
 
-        if(posting.readme && RepositoryService.VCS_GIT.equals(project.vcs)){
-            posting.body = BareRepository.readREADME(project);
-        }
         return ok(edit.render("post.modify", editForm, posting, number, project, isAllowedToNotice));
     }
 
@@ -346,11 +250,6 @@ public class BoardApp extends AbstractPostingApp {
 
         final Posting post = postForm.get();
         final Posting original = Posting.findByNumber(project, number);
-        if (post.readme) {
-            post.setAuthor(UserApp.currentUser());
-            commitReadmeFile(project, post);
-            unmarkAnotherReadmePostingIfExists(project, number);
-        }
         Call redirectTo = routes.BoardApp.post(project.owner, project.name, number);
         Runnable updatePostingBeforeUpdate = new Runnable() {
             @Override
@@ -363,14 +262,6 @@ public class BoardApp extends AbstractPostingApp {
         };
 
         return editPosting(original, post, postForm, redirectTo, updatePostingBeforeUpdate);
-    }
-
-    private static void unmarkAnotherReadmePostingIfExists(Project project, Long postingNumber) {
-        Posting previousReadmePosting = Posting.findREADMEPosting(project);
-        if(previousReadmePosting != null && !Objects.equals(previousReadmePosting.getNumber(), postingNumber)){
-            previousReadmePosting.readme = false;
-            previousReadmePosting.directSave();
-        }
     }
 
     /**

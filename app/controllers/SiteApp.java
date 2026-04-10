@@ -32,7 +32,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import controllers.annotation.AnonymousCheck;
-import data.DataService;
 import info.schleichardt.play2.mailplugin.Mailer;
 import models.Attachment;
 import models.Issue;
@@ -58,7 +57,6 @@ import utils.Constants;
 import utils.Diagnostic;
 import utils.ErrorViews;
 import utils.SiteManagerAuthAction;
-import views.html.site.data;
 import views.html.site.diagnostic;
 import views.html.site.issueList;
 import views.html.site.mail;
@@ -347,38 +345,6 @@ public class SiteApp extends Controller {
      */
     public static Result diagnose() {
         return ok(diagnostic.render("title.siteSetting", Diagnostic.checkAll()));
-    }
-
-    public static Result data() {
-        return ok(data.render("title.siteSetting"));
-    }
-
-    public static Result exportData() throws JsonProcessingException {
-        Date date = new Date();
-        DateFormatter formatter = new DateFormatter("yyyyMMddHHmm");
-        String formattedDate = formatter.print(date, Locale.getDefault());
-
-        InputStream in = new DataService().exportData();
-        response().setContentType("application/x-download");
-        response().setHeader("Content-disposition","attachment; filename=yobi-data-" + formattedDate + ".json");
-
-        return ok(in);
-    }
-
-    public static Result importData() throws IOException {
-        Http.MultipartFormData body = request().body().asMultipartFormData();
-        Http.MultipartFormData.FilePart yobiData = body.getFile("data");
-        if (yobiData != null) {
-            File file = yobiData.getFile();
-            try {
-                new DataService().importData(file);
-                return redirect(routes.Application.index());
-            } catch (Exception e) {
-                return badRequest(ErrorViews.BadRequest.render());
-            }
-        } else {
-            return redirect(routes.SiteApp.data());
-        }
     }
 
     public static Result noAvatarUsers() {

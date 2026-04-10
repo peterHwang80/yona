@@ -48,12 +48,6 @@
                     </form>
                 </div>
             </div>
-            @if(project.menuSetting.code) {
-                <div class="project-clone-wrap span3 hide-in-mobile">
-                    <input type="text" class="project-clone-url" id="cloneURL" readonly="readonly" value="@if(project.isGit){@CodeApp.getURLWithLoginId(project)} else {@CodeApp.getURL(project)}">
-                    <button class="ybtn project-clone-button" data-clipboard-target="cloneURL" id="cloneURLBtn">@Messages("code.copyUrl")</button>
-                </div>
-            }
         </div>
         <div class="row-fluid">
             <div class="span9 span-left-pane">
@@ -99,15 +93,6 @@
                             <span class="project-btn-item">
                                 <a href="@routes.IssueApp.newIssueForm(project.owner, project.name)" class="ybtn ybtn-success">@Messages("button.newIssue")</a>
                             </span>
-                        }
-                        @if(project.menuSetting.code) {
-                            @if(project.vcs.equals("GIT")){
-                            <span class="project-btn-item">
-                                <a href="@routes.PullRequestApp.newFork(project.owner, project.name)" class="ybtn ybtn-inverse">
-                                    @Messages("fork")
-                                </a>
-                            </span>
-                            }
                         }
                     </div>
                     @if(project.menuSetting.milestone) {
@@ -171,8 +156,7 @@ $(document).ready(function(){
         "welLabelBoard": $('#label-board'),
         "welLabelEditorToggle": $('#label-editor-toggle'),
         "nProjectId"     : "@project.id",
-        "sURLProject"       : "@routes.ProjectApp.projectOverviewUpdate(project.owner, project.name)",
-        "sURLZeroClipboard" : "@routes.Assets.at("javascripts/lib/jquery/ZeroClipboard.swf")"
+        "sURLProject"       : "@routes.ProjectApp.projectOverviewUpdate(project.owner, project.name)"
     });
 });
 </script>

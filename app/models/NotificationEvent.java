@@ -37,8 +37,6 @@ import javax.persistence.*;
 import javax.servlet.ServletException;
 import java.beans.Transient;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -565,7 +563,7 @@ public class NotificationEvent extends Model implements INotificationEvent {
                 if (getProject() == null) {
                     return null;
                 } else {
-                    return routes.CodeHistoryApp.historyUntilHead(
+                    return routes.ProjectApp.project(
                             getProject().owner, getProject().name).url();
                 }
             default:
@@ -1345,11 +1343,7 @@ public class NotificationEvent extends Model implements INotificationEvent {
             result.append("### " + Messages.get("notification.pushed.branches") + "\n");
 
             for(String refName: refNames) {
-                try {
-                    result.append("[" + refName + "](" + routes.CodeHistoryApp.history(project.owner, project.name, URLEncoder.encode(refName, "UTF-8"), "") + ")");
-                } catch(UnsupportedEncodingException e){
-                    result.append(refName);
-                }
+                result.append("[" + refName + "](" + routes.ProjectApp.project(project.owner, project.name).url() + ")");
                 result.append("\n");
             }
         }

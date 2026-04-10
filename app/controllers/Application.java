@@ -18,7 +18,6 @@ import play.Logger;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import playRepository.RepositoryService;
 import views.html.error.notfound_default;
 import views.html.index.index;
 import views.html.index.notifications;
@@ -104,7 +103,6 @@ public class Application extends Controller {
     }
 
     public static Result init() {
-        makeTestRepository();
         return redirect(routes.Application.index());
     }
 
@@ -112,17 +110,6 @@ public class Application extends Controller {
 
     public static Result jsMessages() {
         return ok(messages.generate("Messages")).as("application/javascript");
-    }
-
-    private static void makeTestRepository() {
-        for (Project project : Project.find.all()) {
-            Logger.debug("makeTestRepository: " + project.name);
-            try {
-                RepositoryService.createRepository(project);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public static Result navi() {

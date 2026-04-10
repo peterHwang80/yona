@@ -5,11 +5,10 @@
 * https://yona.io
 **@
 @import play.data.Form
-@(message: String)(projectForm: Form[Project], project: Project, branches: List[String])
+@(message: String)(projectForm: Form[Project], project: Project)
 
 @import helper._
 @import utils.TemplateHelper._
-@import utils.TemplateHelper.Branches._
 
 @oldPlace() = @{
     if(project.hasOldPlace){
@@ -74,85 +73,12 @@
                         <span class="note">@Messages("project.private.notice")</span>
                     </div>
                 </div>
-            @if(project.vcs.equals("GIT")) {
-                <div class="box-wrap middle">
-                    <div class="cu-label">@Messages("issue.template")</div>
-                    <div class="cu-desc">
-                        <a href="@routes.BoardApp.newPostForm(project.owner, project.name)?issueTemplate=true" class="ybtn" target="_blank">@Messages("issue.template.edit")</a>
-                    </div>
-                </div>
-            }
-                <div class="box-wrap middle">
-                    <div class="cu-label">@Messages("project.codeAccessible")</div>
-                    <div class="cu-desc">
-                        <input name="isCodeAccessibleMemberOnly" type="radio" id="codeAccessibleMemberOnly" class="radio-btn" value="true" @if(project.isCodeAccessibleMemberOnly){checked="checked"}><label for="codeAccessibleMemberOnly" class="bg-radiobtn label-public">@Messages("button.yes")</label>
-                        <input name="isCodeAccessibleMemberOnly" type="radio" id="codeAccessibleAnyone" class="radio-btn" value="false" @if(!project.isCodeAccessibleMemberOnly){checked="checked"}><label for="codeAccessibleAnyone" class="bg-radiobtn label-private">@Messages("button.no")</label>
-                        <span class="note"></span>
-                    </div>
-                </div>
-
-                @if(project.vcs.equals("GIT")){
-                <div class="box-wrap middle reviewer-count-wrap" id="reviewerCountSettingPanel" style="@if(!project.menuSetting.code){display:none;}">
-                    <div class="cu-label vmiddle">@Messages("project.reviewer.count")</div>
-                    <div class="cu-desc">
-                        <input name="isUsingReviewerCount" data-toggle="reviewer-count" data-action="show" type="radio" class="radio-btn" id="reviewerCountEnable" value="true" @if(project.isUsingReviewerCount){checked="checked"}>
-                        <label for="reviewerCountEnable" class="bg-radiobtn label-public">@Messages("project.reviewer.count.enable")</label>
-                        <input name="isUsingReviewerCount" data-toggle="reviewer-count" data-action="hide" type="radio" class="radio-btn" id="reviewerCountDisable" value="false" @if(!project.isUsingReviewerCount){checked="checked"}>
-                        <label for="reviewerCountDisable" class="bg-radiobtn label-private">@Messages("project.reviewer.count.disable")</label>
-
-                        <div id="welReviewerCount" data-value="@project.isUsingReviewerCount" class="hide">
-                            <div class="btn-group branches" data-id="project-reviewer-count" data-name="defaultReviewerCount">
-                                <button class="btn dropdown-toggle large" data-toggle="dropdown">
-                                    <span class="d-label">@project.defaultReviewerCount</span>
-                                    <span class="d-caret"><span class="caret"></span></span>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    @for(point <- 1 to project.getMaxNumberOfRequiredReviewerCount){
-                                    <li data-value="@point"><a>@point</a></li>
-                                    }
-                                </ul>
-                            </div>
-                            <span class="note ml10">@Messages("project.reviewer.count.description")</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="box-wrap middle" id="defaultBranceSettingPanel" style="@if(!project.menuSetting.code){display:none;}">
-                    <div class="cu-label vmiddle">@Messages("code.branches.defaultBranch")</div>
-                    <div class="cu-desc">
-                        <select id="project-default-branch" name="defaultBranch"
-                                data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" style="min-width: 220px;">
-                            @for(branchName <- branches if Branches.itemType(branchName).equals("branch")){
-                                <option value="@branchName"
-                                        @if(branchItemName(branchName) == branchItemName(project.defaultBranch)){ selected }>
-                                        @branchName
-                                </option>
-                            }
-                        </select>
-                    </div>
-                </div>
-                }
-
                 <div class="box-wrap middle">
                     <div class="cu-label vmiddle">@Messages("project.menu.setting")</div>
                     <div class="cu-desc">
-                        <label for="menuSettingCode" class="bg-radiobtn label-public inline-list">
-                            <input type="checkbox" class="radio-btn" id="menuSettingCode" name="code" value="true" @if(project.menuSetting.code){checked="checked"}>
-                            @Messages("menu.code")
-                        </label>
                         <label for="menuSettingIssue" class="bg-radiobtn label-public inline-list">
                             <input type="checkbox" class="radio-btn" id="menuSettingIssue" name="issue" value="true" @if(project.menuSetting.issue){checked="checked"}>
                             @Messages("menu.issue")
-                        </label>
-                        @if(project.vcs.equals("GIT")){
-                        <label for="menuSettingPullRequest" class="bg-radiobtn label-public inline-list">
-                            <input type="checkbox" class="radio-btn" id="menuSettingPullRequest" name="pullRequest" value="true" @if(project.menuSetting.pullRequest){checked="checked"}>
-                            @Messages("menu.pullRequest")
-                        </label>
-                        }
-                        <label for="menuSettingReview" class="bg-radiobtn label-public inline-list">
-                            <input type="checkbox" class="radio-btn" id="menuSettingReview" name="review" value="true" @if(project.menuSetting.review){checked="checked"}>
-                            @Messages("menu.review")
                         </label>
                         <label for="menuSettingMilestone" class="bg-radiobtn label-public inline-list">
                             <input type="checkbox" class="radio-btn" id="menuSettingMilestone" name="milestone" value="true" @if(project.menuSetting.milestone){checked="checked"}>

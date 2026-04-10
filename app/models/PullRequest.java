@@ -10,7 +10,6 @@ package models;
 import actors.RelatedPullRequestMergingActor;
 import akka.actor.Props;
 import com.avaje.ebean.*;
-import controllers.PullRequestApp.SearchCondition;
 import controllers.UserApp;
 import errors.PullRequestException;
 import models.enumeration.EventType;
@@ -747,59 +746,6 @@ public class PullRequest extends Model implements ResourceConvertible {
     public List<FileDiff> getDiff(String revA, String revB) throws IOException {
         Repository repository = getRepository();
         return GitRepository.getDiff(repository, revA, repository, revB);
-    }
-
-    public static Page<PullRequest> findPagingList(SearchCondition condition) {
-        return createSearchExpressionList(condition)
-                .order().desc(condition.category.order())
-                .findPagingList(ITEMS_PER_PAGE)
-                .getPage(condition.pageNum - 1);
-    }
-
-    public static int count(SearchCondition condition) {
-        return createSearchExpressionList(condition).findRowCount();
-    }
-
-    private static ExpressionList<PullRequest> createSearchExpressionList(SearchCondition condition) {
-        ExpressionList<PullRequest> el = finder.where();
-        if (condition.project != null) {
-            el.eq(condition.category.project(), condition.project);
-        }
-        if (condition.organization != null) {
-            List<Project> projects = condition.organization.getVisibleProjects(UserApp.currentUser());
-            List<String> projectsIds = new ArrayList<>();
-            for (Project project : projects) {
-                projectsIds.add(project.id.toString());
-            }
-            el.in("to_project_id", projectsIds);
-            el.in("from_project_id", projectsIds);
-        }
-        Expression state = createStateSearchExpression(condition.category.states());
-        if (state != null) {
-            el.add(state);
-        }
-        if (condition.contributorId != null) {
-            el.eq("contributor.id", condition.contributorId);
-        }
-        if (StringUtils.isNotBlank(condition.filter)) {
-            Set<Object> ids = new HashSet<>();
-            ids.addAll(el.query().copy().where()
-                    .icontains("commentThreads.reviewComments.contents", condition.filter).findIds());
-            ids.addAll(el.query().copy().where()
-                    .eq("pullRequestCommits.state", PullRequestCommit.State.CURRENT)
-                    .or(
-                            icontains("pullRequestCommits.commitMessage", condition.filter),
-                            icontains("pullRequestCommits.commitId", condition.filter))
-                    .findIds());
-            Junction<PullRequest> junction = el.disjunction();
-            junction.icontains("title", condition.filter).icontains("body", condition.filter)
-                    .icontains("mergedCommitIdTo", condition.filter);
-            if (!ids.isEmpty()) {
-                junction.in("id", ids);
-            }
-            junction.endJunction();
-        }
-        return el;
     }
 
     private static Expression createStateSearchExpression(State[] states) {

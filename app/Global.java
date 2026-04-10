@@ -24,7 +24,6 @@ import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.exceptions.AccessDeniedException;
 import com.feth.play.module.pa.exceptions.AuthException;
 import com.typesafe.config.ConfigFactory;
-import controllers.SvnApp;
 import controllers.UserApp;
 import controllers.routes;
 import mailbox.MailboxService;
@@ -163,8 +162,6 @@ public class Global extends GlobalSettings {
         timestamp.logElapsedTime("--- Config reading: ok!");
         Property.onStart();
         timestamp.logElapsedTime("--- Property reading: ok!");
-        PullRequest.onStart();
-        timestamp.logElapsedTime("--- Pull request checking: ok!");
         NotificationMail.onStart();
         timestamp.logElapsedTime("--- Notification mail scheduler: ok!");
         NotificationEvent.onStart();
@@ -368,13 +365,7 @@ public class Global extends GlobalSettings {
 
     @Override
     public Handler onRouteRequest(RequestHeader request) {
-        // If request method is webdav method, SvnApp serves this request
-        // because Play2 cannot route them.
-        if (SvnApp.isWebDavMethod(request.method())) {
-            return routes.ref.SvnApp.service().handler();
-        } else {
-            return super.onRouteRequest(request);
-        }
+        return super.onRouteRequest(request);
     }
 
     public void onStop(Application app) {

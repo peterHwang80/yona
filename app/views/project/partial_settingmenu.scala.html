@@ -43,6 +43,4 @@
         <a href="@routes.ProjectApp.transferForm(project.owner, project.name)">@Messages("project.transfer")</a></li>
     <li id="subMenuProjectDelete" class="@isActiveSubMenu(routes.ProjectApp.deleteForm(project.owner, project.name))">
         <a href="@routes.ProjectApp.deleteForm(project.owner, project.name)">@Messages("project.delete")</a></li>
-    <li id="subMenuProjectChangeVCS" class="@isActiveSubMenu(routes.ProjectApp.changeVCS(project.owner, project.name))" style="@if(!project.menuSetting.code){display:none;}">
-        <a href="@routes.ProjectApp.changeVCS(project.owner, project.name)">@Messages("project.changeVCS")</a></li>
 </ul>

@@ -606,7 +606,7 @@ public class GitRepository implements PlayRepository {
             data.put("createdDate", revCommit.getCommitTime() * 1000l);
             data.put("author", commit.getAuthorName());
             data.put("commitId", commit.getShortId());
-            data.put("commitUrl", routes.CodeHistoryApp.show(ownerName, projectName, commit.getShortId()).url());
+            data.put("commitUrl", routes.ProjectApp.project(ownerName, projectName).url());
             found.put(extendPath(basePath, path), data);
         }
     }

@@ -44,8 +44,7 @@
         case SearchType.MILESTONE => { Messages("search.menu.milestones") }
         case SearchType.ISSUE_COMMENT => { Messages("search.menu.issue.comments") }
         case SearchType.POST_COMMENT => { Messages("search.menu.board.comments") }
-        case SearchType.REVIEW => { Messages("search.menu.reviews") }  
-        case SearchType.NA => { }
+        case _ => { "" }
     }
 }
 
@@ -58,8 +57,7 @@
         case SearchType.MILESTONE => { searchResult.getMilestonesCount }
         case SearchType.ISSUE_COMMENT => { searchResult.getIssueCommentsCount }
         case SearchType.POST_COMMENT => { searchResult.getPostCommentsCount }
-        case SearchType.REVIEW => { searchResult.getReviewsCount }  
-        case SearchType.NA => { }
+        case _ => { 0 }
     }
 }
 <div class="site-breadcrumb-outer">
@@ -119,12 +117,6 @@
                                 <span class="num-badge pull-right">@searchResult.getPostCommentsCount</span>
                             </a>
                         </li>
-                        <li class="@isActiveMenu(SearchType.REVIEW) @if(searchResult.getReviewsCount == 0) {empty}">
-                            <a href="#" data-toggle="search-category" data-type="@SearchType.REVIEW.getType()">
-                                @Messages("search.menu.reviews")
-                                <span class="num-badge pull-right">@searchResult.getReviewsCount</span>
-                            </a>
-                        </li>
                     </ul>
                 </div>
                 <div class="span10">
@@ -168,9 +160,6 @@
                             @partial_post_comments(group, project, searchResult)
                         }
 
-                        @if(searchResult.getSearchType() == SearchType.REVIEW) {
-                            @partial_reviews(group, project, searchResult)
-                        }
                     </div>
                 </div>
             </div>

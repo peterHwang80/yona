@@ -8,7 +8,6 @@
 @(title:String, newProjectForm: Form[Project], orgUserList:List[OrganizationUser])
 
 @import utils.TemplateHelper._
-@import playRepository.RepositoryService
 @import models.Organization
 
 @siteLayout(title, utils.MenuType.NEW_PROJECT){
@@ -18,12 +17,6 @@
       <form id="newProjectForm" action="@routes.ProjectApp.newProject()" method="post" class="frm-wrap">
         <legend>
           @Messages("title.newProject")
-          <span>
-            <small>@Messages("project.import.or") &nbsp; </small>
-            <a href="@routes.ImportApp.importForm()?owner=@newProjectForm.field("owner").value" class="ybtn ybtn-small nm">
-              <strong>@Messages("project.import.from.git")</strong>
-            </a>
-          </span>
         </legend>
 
         <dl>
@@ -121,57 +114,15 @@
             </div>
           </div>
           <!-- // -->
-          <hr>
-          <!-- VCS -->
-          <div class="row-fluid">
-            <div class="span2 right-txt mt10">
-              <label for="vcs">
-                @Messages("project.vcs")
-              </label>
-            </div>
-            <div class="span10 cu-desc">
-              @defining(newProjectForm.field("vcs").value){ vcsFormField =>
-              <select id="vcs" name="vcs" data-toggle="select2" data-dropdown-css-class="select2-without-searchbox" class="mb10 mt5" style="min-width: 220px;">
-                @RepositoryService.vcsTypes.map{ v =>
-                <option value="@v._1"
-                @if((vcsFormField == null && v._1 == "GIT") || (vcsFormField == v._1)){
-                selected
-                }>
-                @Messages(v._2)
-                </option>
-                }
-              </select>
-
-              <span id="svn" class="ml10 notice"
-              @if(vcsFormField == null || vcsFormField == "GIT"){style="display: none;"}
-              >
-              @Messages("project.svn.warning")
-              </span>
-              }
-            </div>
-          </div>
-          <hr>
           <!-- Menu Setting -->
           <div class="row-fluid">
             <div class="span2 right-txt">
               @Messages("project.menu.setting")
             </div>
             <div class="span10">
-                <label for="menuSettingCode" class="bg-radiobtn label-public inline-list">
-                  <input type="checkbox" class="radio-btn" id="menuSettingCode" name="code" @if(containsInDefaultMenus("code")){value="true" checked} >
-                  @Messages("menu.code")
-                </label>
                 <label for="menuSettingIssue" class="bg-radiobtn label-public inline-list">
                   <input type="checkbox" class="radio-btn" id="menuSettingIssue" name="issue" @if(containsInDefaultMenus("issue")){value="true" checked} >
                   @Messages("menu.issue")
-                </label>
-                <label for="menuSettingPullRequest" class="bg-radiobtn label-public inline-list">
-                  <input type="checkbox" class="radio-btn" id="menuSettingPullRequest" name="pullRequest" @if(containsInDefaultMenus("pullRequest")){value="true" checked} >
-                  @Messages("menu.pullRequest")
-                </label>
-                <label for="menuSettingReview" class="bg-radiobtn label-public inline-list">
-                  <input type="checkbox" class="radio-btn" id="menuSettingReview" name="review" @if(containsInDefaultMenus("review")){value="true" checked} >
-                  @Messages("menu.review")
                 </label>
                 <label for="menuSettingMilestone" class="bg-radiobtn label-public inline-list">
                   <input type="checkbox" class="radio-btn" id="menuSettingMilestone" name="milestone" @if(containsInDefaultMenus("milestone")){value="true" checked} >

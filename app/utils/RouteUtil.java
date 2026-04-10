@@ -7,7 +7,6 @@
 
 package utils;
 
-import controllers.CodeHistoryApp;
 import controllers.routes;
 import models.*;
 import models.enumeration.ResourceType;
@@ -17,7 +16,6 @@ import models.SimpleCommentThread;
 import models.NonRangedCodeCommentThread;
 import models.CodeCommentThread;
 
-import playRepository.Commit;
 import utils.TemplateHelper.DiffRenderer$;
 
 public class RouteUtil {
@@ -116,18 +114,13 @@ public class RouteUtil {
 
     public static String getUrl(PullRequest pullRequest) {
         if (pullRequest == null) return null;
-
-        Project toProject = pullRequest.toProject;
-        return controllers.routes.PullRequestApp.pullRequest(
-                toProject.owner, toProject.name, pullRequest.number).url();
+        return getUrl(pullRequest.toProject);
     }
 
     public static String getUrl(CommitComment comment) {
         if (comment == null) return null;
-
-        play.mvc.Call toView = controllers.routes.CodeHistoryApp.show(
-                comment.project.owner, comment.project.name, comment.commitId);
-        return toView + "#comment-" + comment.id;
+        String projectUrl = getUrl(comment.project);
+        return projectUrl == null ? null : projectUrl + "#comment-" + comment.id;
     }
 
     public static String getUrl(Comment comment) {
@@ -157,9 +150,8 @@ public class RouteUtil {
         return diffRenderer.urlToContainer(thread) + "#thread-" + thread.id;
     }
 
-    public static String getUrl(Commit commit, Project project) {
+    public static String getUrl(playRepository.Commit commit, Project project) {
         if (commit == null) return null;
-
-        return controllers.routes.CodeHistoryApp.show(project.owner, project.name, commit.getId()).url();
+        return getUrl(project);
     }
 }

@@ -22,7 +22,6 @@ package models;
 
 import org.apache.commons.lang3.StringUtils;
 import play.Configuration;
-import playRepository.Commit;
 
 import java.util.*;
 
@@ -118,33 +117,15 @@ public class History {
     }
 
     public static List<History> makeHistory(String userName, Project project,
-                                            List<Commit> commits,
+                                            List<?> commits,
                                             List<Issue> issues,
                                             List<Posting> postings,
                                             List<PullRequest> pullRequests) {
         List<History> histories = new ArrayList<>();
-        buildCommitHistory(userName, project, commits, histories);
         buildIssueHistory(userName, project, issues, histories);
         buildPostingHistory(userName, project, postings, histories);
-        buildPullRequestsHistory(userName, project, pullRequests, histories);
         sort(histories);
         return histories;
-    }
-
-    private static void buildPullRequestsHistory(String userName, Project project, List<PullRequest> pullRequests, List<History> histories) {
-        for(PullRequest pull : pullRequests) {
-            History pullHistory = new History();
-            User contributor = pull.contributor;
-            pullHistory.setWho(contributor.loginId);
-            setUserPageUrl(pullHistory, User.findByLoginId(contributor.loginId));
-            pullHistory.setWhen(pull.created);
-            pullHistory.setWhere(project.name);
-            pullHistory.setWhat("pullrequest");
-            pullHistory.setShortTitle("#" + pull.number);
-            pullHistory.setHow(pull.title);
-            pullHistory.setUrl("/" + userName + "/" + project.name + "/pullRequest/" + pull.number);
-            histories.add(pullHistory);
-        }
     }
 
     private static void sort(List<History> histories) {
@@ -185,27 +166,6 @@ public class History {
             issueHistory.setHow(issue.title);
             issueHistory.setUrl("/" + userName + "/" + project.name + "/issue/" + issue.number);
             histories.add(issueHistory);
-        }
-    }
-
-    private static void buildCommitHistory(String userName, Project project, List<Commit> commits, List<History> histories) {
-        if(commits != null) {
-            for(Commit commit : commits) {
-                History commitHistory = new History();
-                String authorEmail = commit.getAuthorEmail();
-                if(User.isEmailExist(authorEmail)) {
-                    setUserPageUrl(commitHistory, User.findByEmail(authorEmail));
-                } else {
-                    commitHistory.setWho(commit.getAuthorName());
-                }
-                commitHistory.setWhen(commit.getCommitterDate());
-                commitHistory.setWhere(project.name);
-                commitHistory.setWhat("commit");
-                commitHistory.setShortTitle(commit.getShortId());
-                commitHistory.setHow(commit.getShortMessage());
-                commitHistory.setUrl("/" + userName + "/" + project.name + "/commit/" + commit.getId());
-                histories.add(commitHistory);
-            }
         }
     }
 

@@ -39,19 +39,6 @@
                     @partial_dashboard_issuesbymilestone(project, openIssues)
                 </div>
             }
-
-            @if(project.menuSetting.pullRequest) {
-                @if(project.isGit){
-                    @if(project.menuSetting.issue) {
-                        <hr>
-                    }
-
-                    <h5>@Messages("project.dashboard.pullRequests")</h5>
-                    <div class="overview-pullrequest">
-                        @partial_dashboard_pullrequests(project)
-                    </div>
-                }
-            }
         </div>
 
         @if(project.menuSetting.issue) {

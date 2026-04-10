@@ -22,7 +22,6 @@ import utils.*;
 
 import java.util.*;
 
-import static controllers.MigrationApp.getMilestoneNode;
 import static play.libs.Json.toJson;
 
 public class MilestoneApi extends AbstractPostingApp {
@@ -64,7 +63,7 @@ public class MilestoneApi extends AbstractPostingApp {
         newMilestone.state = parseMilestoneState(milestoneNode);
 
         Milestone.create(newMilestone);
-        return getMilestoneNode(newMilestone);
+        return ProjectApi.getMilestoneNode(newMilestone);
     }
 
     private static State parseMilestoneState(JsonNode json) {

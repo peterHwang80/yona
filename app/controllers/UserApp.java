@@ -746,7 +746,6 @@ public class UserApp extends Controller {
         User user = User.findByLoginId(loginId);
 
         List<Issue> issues = new ArrayList<>();
-        List<PullRequest> pullRequests = new ArrayList<>();
         List<Project> projects = new ArrayList<>();
         Map<Long, Boolean> projectAclMap = new HashMap<>();
 
@@ -755,9 +754,6 @@ public class UserApp extends Controller {
             issues = getAclValidatedIssues(
                     Issue.findRecentlyIssuesByDaysAgo(user, daysAgo),
                     projectAclMap);
-            pullRequests = getAclValidatedPullRequests(
-                    PullRequest.findOpendPullRequestsByDaysAgo(user, daysAgo),
-                    projectAclMap);
 
             sortByLastPushedDateAndName(projects);
         }
@@ -765,7 +761,7 @@ public class UserApp extends Controller {
         if (user.isAnonymous()) {
             return notFound(ErrorViews.NotFound.render("user.notExists.name"));
         }
-        return ok(view.render(user, projects, issues, pullRequests, daysAgo, selected));
+        return ok(view.render(user, projects, issues, daysAgo, selected));
     }
 
     private static void sortByLastPushedDateAndName(List<Project> projects) {
@@ -792,23 +788,6 @@ public class UserApp extends Controller {
         });
     }
 
-    private static List<PullRequest> getAclValidatedPullRequests(List<PullRequest> pullRequests, Map<Long, Boolean> projectAcl) {
-        List<PullRequest> aclValidatedPullRequests = new ArrayList<>();
-        for (PullRequest pullRequest : pullRequests) {
-            if(projectAcl.getOrDefault(pullRequest.toProject.id, false)) {
-                aclValidatedPullRequests.add(pullRequest);
-            } else {
-                if (AccessControl.isAllowed(UserApp.currentUser(), pullRequest.toProject.asResource(), Operation.READ)) {
-                    aclValidatedPullRequests.add(pullRequest);
-                    projectAcl.putIfAbsent(pullRequest.toProject.id, true);
-                } else {
-                    projectAcl.putIfAbsent(pullRequest.toProject.id, false);
-                }
-            }
-        }
-        return aclValidatedPullRequests;
-    }
-
     private static List<Issue> getAclValidatedIssues(List<Issue> issues, Map<Long, Boolean> projectAcl) {
         List<Issue> aclValidatedIssues = new ArrayList<>();
 
@@ -832,15 +811,6 @@ public class UserApp extends Controller {
             @Override
             public int compare(Issue i1, Issue i2) {
                 return i2.updatedDate.compareTo(i1.updatedDate);
-            }
-        });
-    }
-
-    private static void sortPullRequests(List<PullRequest> pullRequests) {
-        Collections.sort(pullRequests, new Comparator<PullRequest>() {
-            @Override
-            public int compare(PullRequest p1, PullRequest p2) {
-                return p2.updated.compareTo(p1.updated);
             }
         });
     }

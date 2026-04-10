@@ -13,7 +13,6 @@ import controllers.annotation.AnonymousCheck;
 import controllers.annotation.GuestProhibit;
 import controllers.annotation.IsAllowed;
 import info.schleichardt.play2.mailplugin.Mailer;
-import jxl.write.WriteException;
 import models.*;
 import models.enumeration.*;
 import org.apache.commons.collections.CollectionUtils;
@@ -21,9 +20,6 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.mail.HtmlEmail;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.NoHeadException;
-import org.tmatesoft.svn.core.SVNException;
 
 import models.resource.Resource;
 import play.Logger;
@@ -35,10 +31,6 @@ import play.i18n.Messages;
 import play.libs.Json;
 import play.mvc.*;
 import play.mvc.Http.MultipartFormData.FilePart;
-import playRepository.Commit;
-import playRepository.PlayRepository;
-import playRepository.RepositoryService;
-import scala.reflect.io.FileOperationException;
 import utils.*;
 import validation.ExConstraints.RestrictedValidator;
 import views.html.project.create;
@@ -46,9 +38,6 @@ import views.html.project.delete;
 import views.html.project.home;
 import views.html.project.setting;
 import views.html.project.transfer;
-import views.html.project.change_vcs;
-
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -68,15 +57,9 @@ public class ProjectApp extends Controller {
 
     private static final int MAX_FETCH_PROJECTS = 1000;
 
-    private static final int COMMIT_HISTORY_PAGE = 0;
-
-    private static final int COMMIT_HISTORY_SHOW_LIMIT = 10;
-
     private static final int RECENLTY_ISSUE_SHOW_LIMIT = 10;
 
     private static final int RECENLTY_POSTING_SHOW_LIMIT = 10;
-
-    private static final int RECENT_PULL_REQUEST_SHOW_LIMIT = 10;
 
     private static final int PROJECT_COUNT_PER_PAGE = 10;
 
@@ -102,8 +85,7 @@ public class ProjectApp extends Controller {
 
     @IsAllowed(Operation.READ)
     @Transactional
-    public static Result project(String ownerId, String projectName)
-            throws IOException, ServletException, SVNException, GitAPIException {
+    public static Result project(String ownerId, String projectName) {
         Project project = Project.findByOwnerAndProjectName(ownerId, projectName);
         List<History> histories = null;
 
@@ -128,25 +110,11 @@ public class ProjectApp extends Controller {
         }
     }
 
-    private static List<History> getProjectHistory(String ownerId, Project project)
-            throws IOException, ServletException, SVNException, GitAPIException {
-        project.fixInvalidForkData();
-
-        PlayRepository repository = RepositoryService.getRepository(project);
-
-        List<Commit> commits = null;
-
-        try {
-            commits = repository.getHistory(COMMIT_HISTORY_PAGE, COMMIT_HISTORY_SHOW_LIMIT, null, null);
-        } catch (NoHeadException e) {
-            // NOOP
-        }
-
+    private static List<History> getProjectHistory(String ownerId, Project project) {
         List<Issue> issues = Issue.findRecentlyCreated(project, RECENLTY_ISSUE_SHOW_LIMIT);
         List<Posting> postings = Posting.findRecentlyCreated(project, RECENLTY_POSTING_SHOW_LIMIT);
-        List<PullRequest> pullRequests = PullRequest.findRecentlyReceived(project, RECENT_PULL_REQUEST_SHOW_LIMIT);
 
-        return History.makeHistory(ownerId, project, commits, issues, postings, pullRequests);
+        return History.makeHistory(ownerId, project, Collections.emptyList(), issues, postings, Collections.emptyList());
     }
 
     @AnonymousCheck(requiresLogin = true, displaysFlashMessage = true)
@@ -158,11 +126,10 @@ public class ProjectApp extends Controller {
     }
 
     @IsAllowed(Operation.UPDATE)
-    public static Result settingForm(String ownerId, String projectName) throws Exception {
+    public static Result settingForm(String ownerId, String projectName) {
         Project project = Project.findByOwnerAndProjectName(ownerId, projectName);
         Form<Project> projectForm = form(Project.class).fill(project);
-        PlayRepository repository = RepositoryService.getRepository(project);
-        return ok(setting.render("title.projectSetting", projectForm, project, repository.getRefNames()));
+        return ok(setting.render("title.projectSetting", projectForm, project));
     }
 
     @Transactional
@@ -184,11 +151,11 @@ public class ProjectApp extends Controller {
         }
 
         Project project = filledNewProjectForm.get();
+        project.vcs = StringUtils.defaultString(project.vcs);
         if (Organization.isNameExist(owner)) {
             project.organization = organization;
         }
         ProjectUser.assignRole(user.id, Project.create(project), RoleType.MANAGER);
-        RepositoryService.createRepository(project);
 
         saveProjectMenuSetting(project);
         Watch.watch(project.asResource());
@@ -235,17 +202,16 @@ public class ProjectApp extends Controller {
     @Transactional
     @IsAllowed(Operation.UPDATE)
     public static Result settingProject(String ownerId, String projectName)
-            throws IOException, NoSuchAlgorithmException, UnsupportedOperationException, ServletException {
+            throws IOException, NoSuchAlgorithmException, UnsupportedOperationException {
         Form<Project> filledUpdatedProjectForm = form(Project.class).bindFromRequest();
         Project project = Project.findByOwnerAndProjectName(ownerId, projectName);
-        PlayRepository repository = RepositoryService.getRepository(project);
 
         if (validateWhenUpdate(ownerId, filledUpdatedProjectForm)) {
-            return badRequest(setting.render("title.projectSetting",
-                    filledUpdatedProjectForm, project, repository.getRefNames()));
+            return badRequest(setting.render("title.projectSetting", filledUpdatedProjectForm, project));
         }
 
         Project updatedProject = filledUpdatedProjectForm.get();
+        updatedProject.vcs = project.vcs;
 
         FilePart filePart = request().body().asMultipartFormData().getFile("logoPath");
 
@@ -254,17 +220,8 @@ public class ProjectApp extends Controller {
             new Attachment().store(filePart.getFile(), filePart.getFilename(), updatedProject.asResource());
         }
 
-        Map<String, String[]> data = request().body().asMultipartFormData().asFormUrlEncoded();
-        String defaultBranch = HttpUtil.getFirstValueFromQuery(data, "defaultBranch");
-        if (StringUtils.isNotEmpty(defaultBranch)) {
-            repository.setDefaultBranch(defaultBranch);
-        }
-
         if (!project.name.equals(updatedProject.name)) {
             updatedProject.recordRenameOrTransferHistoryIfLastChangePassed24HoursFrom(project);
-            if (!repository.renameTo(updatedProject.name)) {
-                throw new FileOperationException("fail repository rename to " + project.owner + "/" + updatedProject.name);
-            }
             CacheStore.refreshProjectMap();
         }
 
@@ -344,7 +301,6 @@ public class ProjectApp extends Controller {
         }
         UserApp.currentUser().removeFavoriteProject(project.id);
         project.delete();
-        RepositoryService.deleteRepository(project);
         CacheStore.refreshProjectMap();
 
         if (HttpUtil.isRequestedWithXHR(request())){
@@ -496,104 +452,6 @@ public class ProjectApp extends Controller {
                 .findList();
     }
 
-    @IsAllowed(Operation.READ)
-    public static Result mentionListAtCommitDiff(String ownerId, String projectName, String commitId, Long pullRequestId)
-            throws IOException, UnsupportedOperationException, ServletException, SVNException {
-        Project project = Project.findByOwnerAndProjectName(ownerId, projectName);
-        String query = request().getQueryString("query");
-        String mentionType = request().getQueryString("mentionType");
-
-        PullRequest pullRequest;
-        Project fromProject = project;
-        if (pullRequestId != -1) {
-            pullRequest = PullRequest.findById(pullRequestId);
-            if (pullRequest != null) {
-                fromProject = pullRequest.fromProject;
-            }
-        }
-
-        Commit commit = RepositoryService.getRepository(fromProject).getCommit(commitId);
-
-        List<User> userList = new ArrayList<>();
-        Map<String, List<Map<String, String>>> result = new HashMap<>();
-
-        if("user".equalsIgnoreCase(mentionType)){
-            if (StringUtils.isEmpty(query)) {
-                addCommitAuthor(commit, userList);
-                addCodeCommenters(commitId, fromProject.id, userList);
-                addProjectMemberList(project, userList);
-                addGroupMemberList(project, userList);
-            } else {
-                addSearchedUsers(query, userList);
-            }
-            userList.remove(UserApp.currentUser());
-            userList.add(UserApp.currentUser()); //send me last at list
-            result.put("result", getUserList(project, userList));
-        }
-
-        if("issue".equalsIgnoreCase(mentionType)) {
-            result.put("result", getIssueList(project, query));
-        }
-
-        return ok(toJson(result));
-    }
-
-    @IsAllowed(Operation.READ)
-    public static Result mentionListAtPullRequest(String ownerId, String projectName, String commitId, Long pullRequestId)
-            throws IOException, UnsupportedOperationException, ServletException, SVNException {
-        Project project = Project.findByOwnerAndProjectName(ownerId, projectName);
-
-        PullRequest pullRequest = PullRequest.findById(pullRequestId);
-
-        Map<String, List<Map<String, String>>> result = new HashMap<>();
-        List<User> userList = new ArrayList<>();
-
-        String query = request().getQueryString("query");
-        String mentionType = request().getQueryString("mentionType");
-
-        if("user".equalsIgnoreCase(mentionType)) {
-            if (StringUtils.isEmpty(query)) {
-                addCommentAuthors(pullRequestId, userList);
-                addProjectMemberList(project, userList);
-                addGroupMemberList(project, userList);
-                if(!commitId.isEmpty()) {
-                    addCommitAuthor(RepositoryService.getRepository(pullRequest.fromProject).getCommit(commitId), userList);
-                }
-            } else {
-                addSearchedUsers(query, userList);
-            }
-
-            User contributor = pullRequest.contributor;
-            if(!userList.contains(contributor)) {
-                userList.add(contributor);
-            }
-
-            userList.remove(UserApp.currentUser());
-            userList.add(UserApp.currentUser()); //send me last at list
-            result.put("result", getUserList(project, userList));
-        }
-
-        if("issue".equalsIgnoreCase(mentionType)) {
-            result.put("result", getIssueList(project, query));
-        }
-
-        return ok(toJson(result));
-    }
-
-    private static void addCommentAuthors(Long pullRequestId, List<User> userList) {
-        List<CommentThread> threads = PullRequest.findById(pullRequestId).commentThreads;
-        for (CommentThread thread : threads) {
-            for (ReviewComment comment : thread.reviewComments) {
-                final User commenter = User.findByLoginId(comment.author.loginId);
-                if(userList.contains(commenter)) {
-                    userList.remove(commenter);
-                }
-                userList.add(commenter);
-            }
-        }
-        Collections.reverse(userList);
-    }
-
     @IsAllowed(Operation.DELETE)
     public static Result transferForm(String ownerId, String projectName) {
         Project project = Project.findByOwnerAndProjectName(ownerId, projectName);
@@ -645,7 +503,7 @@ public class ProjectApp extends Controller {
     }
 
     @AnonymousCheck(requiresLogin = true, displaysFlashMessage = true)
-    public static synchronized Result acceptTransfer(Long id, String confirmKey) throws IOException, ServletException {
+    public static synchronized Result acceptTransfer(Long id, String confirmKey) {
         ProjectTransfer pt = ProjectTransfer.findValidOne(id);
         if (pt == null) {
             return notFound(ErrorViews.NotFound.render());
@@ -660,7 +518,6 @@ public class ProjectApp extends Controller {
 
         Project project = pt.project;
 
-        // Change the project's name and move the repository.
         String newProjectName = Project.newProjectName(pt.destination, project.name);
 
         // Following three local variables are used for bottom of this method
@@ -670,10 +527,6 @@ public class ProjectApp extends Controller {
         Long senderId = pt.sender.id;
 
         disableProjectTransferLink(pt, project, newProjectName);
-        PlayRepository repository = RepositoryService.getRepository(project);
-
-        // intentionally placed to the last of method
-        repository.move(originalProjectOwner, originalProjectName, destinationOwner, newProjectName);
 
         User newOwnerUser = User.findByLoginId(destinationOwner);
         Organization newOwnerOrg = Organization.findByName(destinationOwner);
@@ -709,34 +562,6 @@ public class ProjectApp extends Controller {
 
         // If the opposite request is exists, delete it.
         ProjectTransfer.deleteExisting(project, pt.sender, pt.destination);
-    }
-
-    @IsAllowed(Operation.UPDATE)
-    public static Result changeVCSForm(String ownerId, String projectName) {
-        Project project = Project.findByOwnerAndProjectName(ownerId, projectName);
-        Form<Project> projectForm = form(Project.class).fill(project);
-        return ok(change_vcs.render("title.projectChangeVCS", projectForm, project));
-    }
-
-    @IsAllowed(Operation.UPDATE)
-    public static Result changeVCS(String ownerId, String projectName) throws Exception {
-        Project project = Project.findByOwnerAndProjectName(ownerId, projectName);
-        try {
-            if (project.readme() != null){
-                Posting posting = Posting.findREADMEPosting(project);
-                if (posting != null){
-                    posting.readme = false;
-                    posting.save();
-                }
-            }
-            project.changeVCS();
-            String url = routes.ProjectApp.project(ownerId, projectName).url();
-            response().setHeader("Location", url);
-            return noContent();
-        } catch (Exception e) {
-            Logger.error(e.getMessage());
-        }
-        return internalServerError();
     }
 
     private static void sendTransferRequestMail(ProjectTransfer pt) {
@@ -778,54 +603,6 @@ public class ProjectApp extends Controller {
             play.Logger.of("mail").info(logEntry);
         } catch (Exception e) {
             Logger.warn("Failed to send a notification: " + email + "\n" + ExceptionUtils.getStackTrace(e));
-        }
-    }
-
-    private static void addCodeCommenters(String commitId, Long projectId, List<User> userList) {
-        Project project = Project.find.byId(projectId);
-
-        if (RepositoryService.VCS_GIT.equals(project.vcs)) {
-            List<ReviewComment> comments = ReviewComment.find
-                    .fetch("thread")
-                    .where()
-                    .eq("thread.commitId",commitId)
-                    .eq("thread.project", project)
-                    .eq("thread.pullRequest", null).findList();
-
-            for (ReviewComment comment : comments) {
-                User commentAuthor = User.findByLoginId(comment.author.loginId);
-                if (userList.contains(commentAuthor)) {
-                    userList.remove(commentAuthor);
-                }
-                userList.add(commentAuthor);
-            }
-        } else {
-            List<CommitComment> comments = CommitComment.find.where().eq("commitId",
-                    commitId).eq("project.id", projectId).findList();
-
-            for (CommitComment codeComment : comments) {
-                User commentAuthor = User.findByLoginId(codeComment.authorLoginId);
-                if (userList.contains(commentAuthor)) {
-                    userList.remove(commentAuthor);
-                }
-                userList.add(commentAuthor);
-            }
-        }
-
-        Collections.reverse(userList);
-    }
-
-    private static void addCommitAuthor(Commit commit, List<User> userList) {
-        if (!commit.getAuthor().isAnonymous() && !userList.contains(commit.getAuthor())) {
-            userList.add(commit.getAuthor());
-        }
-
-        //fallback: additional search by email id
-        if (commit.getAuthorEmail() != null) {
-            User authorByEmail = User.findByLoginId(commit.getAuthorEmail().substring(0, commit.getAuthorEmail().lastIndexOf("@")));
-            if (!authorByEmail.isAnonymous() && !userList.contains(authorByEmail)) {
-                userList.add(authorByEmail);
-            }
         }
     }
 
@@ -1322,23 +1099,10 @@ public class ProjectApp extends Controller {
         }
     }
 
-    @Transactional
-    @AnonymousCheck(requiresLogin = true, displaysFlashMessage = true)
-    @IsAllowed(Operation.DELETE)
-    public static Result deletePushedBranch(String ownerId, String projectName, Long id) {
-        PushedBranch pushedBranch = PushedBranch.find.byId(id);
-        if (pushedBranch != null) {
-            pushedBranch.delete();
-        }
-        return ok();
-    }
-
     @IsAllowed(Operation.READ)
     @Transactional
-    public static Result goConventionMenu(String ownerId, String projectName, String state, String format, int pageNum)
-            throws IOException, ServletException, SVNException, GitAPIException, WriteException {
+    public static Result goConventionMenu(String ownerId, String projectName, String state, String format, int pageNum) throws Exception {
         Project project = Project.findByOwnerAndProjectName(ownerId, projectName);
-        List<History> histories = null;
 
         if( project.menuSetting.issue ) {
             return IssueApp.issues(project.owner, project.name, state, format, pageNum);
