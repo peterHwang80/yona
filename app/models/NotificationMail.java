@@ -365,18 +365,18 @@ public class NotificationMail extends Model {
             Resource container = resource.getContainer();
 
             if (container != null) {
-                String reference;
+                String reference = null;
                 switch (container.getType()) {
                     case COMMENT_THREAD:
-                        CommentThread thread =
-                                CommentThread.find.byId(Long.valueOf(container.getId()));
-                        reference = thread.getFirstReviewComment().asResource().getMessageId();
+                        // Review thread mail threading is outside the lightweighted scope.
                         break;
                     default:
                         reference = container.getMessageId();
                         break;
                 }
-                addHeader("References", reference);
+                if (reference != null) {
+                    addHeader("References", reference);
+                }
             }
         }
     }
@@ -609,13 +609,10 @@ public class NotificationMail extends Model {
         switch(resource.getType()) {
             case ISSUE_COMMENT:
             case NONISSUE_COMMENT:
-            case COMMIT_COMMENT:
-            case REVIEW_COMMENT:
                 detail = resource.getContainer().getDetail();
                 break;
             case ISSUE_POST:
             case BOARD_POST:
-            case COMMIT:
                 detail = resource.getDetail();
                 break;
             default:

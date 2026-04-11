@@ -163,17 +163,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
             case POSTING_BODY_CHANGED:
                 return DiffUtil.getDiffText(oldValue, newValue);
             case NEW_REVIEW_COMMENT:
-                try {
-                    ReviewComment reviewComment = ReviewComment.find.byId(Long.valueOf(this.resourceId));
-                    if (reviewComment != null) {
-                        return buildCommentedCodeMessage(reviewComment, lang);
-                    }
-                } catch (Exception e) {
-                    play.Logger.error(
-                            "Failed to generate a notification " +
-                            "message for a review comment", e);
-                }
-
                 return newValue;
             case PULL_REQUEST_STATE_CHANGED:
                 if (State.OPEN.state().equals(newValue)) {
@@ -254,116 +243,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
             default:
                 return getMessage(lang).replaceAll("\n\n<br />\n", "\n\n");
         }
-    }
-
-    /**
-     * Builds a notification message for a comment on code.
-     *
-     * The message contains the commented hunk of the code as below:
-     *
-     *     In foo.c:
-     *
-     *     > @@ -1,5 +1,5 @@
-     *     >   int bar(void)
-     *     >   {
-     *     > -     printf("bad");
-     *     > +     printf("good");
-     *
-     *     Looks good to me
-     *
-     *     >       return 0;
-     *     >   }
-     *
-     * Note: This method has a performance issue. See the comment in the method
-     * body for the details.
-     *
-     * @param reviewComment
-     * @param lang
-     * @return
-     * @throws IOException
-     */
-    private static String buildCommentedCodeMessage(ReviewComment reviewComment, Lang lang) throws
-            IOException {
-        if (reviewComment.thread == null ||
-            !reviewComment.thread.getFirstReviewComment().equals(reviewComment) ||
-            !(reviewComment.thread instanceof CodeCommentThread)) {
-            return reviewComment.getContents();
-        }
-
-        CodeCommentThread thread = (CodeCommentThread) reviewComment.thread;
-
-        PlayRepository repo;
-
-        try {
-            repo = RepositoryService.getRepository(thread.project);
-        } catch (Exception e) {
-            play.Logger.error("Failed to get the repository", e);
-            return reviewComment.getContents();
-        }
-
-        CodeRange codeRange = thread.codeRange;
-
-
-        List<FileDiff> diffs;
-        if (thread.prevCommitId == null) {
-            diffs = repo.getDiff(thread.commitId);
-        } else {
-            diffs = repo.getDiff(thread.prevCommitId, thread.commitId);
-        }
-
-        for(FileDiff diff : diffs) {
-            if (!codeRange.isFor(diff)) continue;
-
-            StringBuilder message = new StringBuilder();
-
-            message.append(Messages.get(lang,
-                    "notification.reviewthread.inTheFile", codeRange.path));
-            message.append("\n");
-
-            diff.setInterestLine(codeRange.endLine);
-            diff.setInterestSide(codeRange.endSide);
-
-            // FIXME: Performance Issue: The hunks of this diffs were
-            // already computed but it was not necessary because they will
-            // and should be recomputed here.
-            FileDiff.Hunks hunks = diff.getHunks();
-            if (hunks != null) {
-                message.append("```diff\n");
-                for (Hunk hunk : hunks) {
-                    message.append(
-                            String.format("> @@ -%d, %d +%d, %d @@\n",
-                                    hunk.beginA + 1, (hunk.endA - hunk.beginA),
-                                    hunk.beginB + 1, (hunk.endB - hunk.beginB)));
-                    for (DiffLine line : hunk.lines) {
-                        message.append("> ");
-                        switch (line.kind) {
-                            case CONTEXT:
-                                message.append(" ");
-                                break;
-                            case ADD:
-                                message.append("+");
-                                break;
-                            case REMOVE:
-                                message.append("-");
-                                break;
-                        }
-                        message.append(line.content + "\n");
-                        if (codeRange.endsWith(line)) {
-                            message.append("```\n");
-                            message.append("\n" + reviewComment.getContents() + "\n\n");
-                            message.append("```diff\n");
-                        }
-                    }
-                }
-                message.append("```\n");
-            } else {
-                message.append(reviewComment.getContents());
-            }
-
-            return message.toString();
-        }
-
-        return reviewComment.getContents();
     }
 
     public User getSender() {
@@ -527,21 +406,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         }
     }
 
-    /**
-     * @see {@link controllers.PullRequestApp#newPullRequest(String, String)}
-     */
-    public static NotificationEvent afterNewPullRequest(User sender, PullRequest pullRequest) {
-        NotificationEvent notiEvent = createFrom(sender, pullRequest);
-        notiEvent.title = formatNewTitle(pullRequest);
-        notiEvent.receivers = getReceiversWithRelatedAuthors(sender, pullRequest);
-        notiEvent.eventType = NEW_PULL_REQUEST;
-        notiEvent.oldValue = null;
-        notiEvent.newValue = pullRequest.body;
-        NotificationEvent.add(notiEvent);
-
-        return notiEvent;
-    }
-
     public String getUrlToView() {
         Organization organization;
         switch(eventType) {
@@ -608,10 +472,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         return resourceId;
     }
 
-    private static void webhookRequest(EventType eventTypes, PullRequest pullRequest) {
-        // Pull request webhooks are removed from the lightweighted product scope.
-    }
-
     private static void webhookRequest(EventType eventTypes, Issue issue) {
         List<Webhook> webhookList = Webhook.findByProject(issue.project.id);
         for (Webhook webhook : webhookList) {
@@ -652,10 +512,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         }
     }
 
-    private static void webhookRequest(EventType eventTypes, PullRequest pullRequest, ReviewComment reviewComment) {
-        // Pull request comment webhooks are removed from the lightweighted product scope.
-    }
-
     private static void webhookRequest(Project project, List<RevCommit> commits, List<String> refNames, User sender, String title) {
         List<Webhook> webhookList = Webhook.findByProject(project.id);
         for (Webhook webhook : webhookList) {
@@ -666,41 +522,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
                 webhook.sendRequestToPayloadUrl(commits, refNames, sender, title);
             }
         }
-    }
-
-    public static NotificationEvent afterPullRequestUpdated(User sender, PullRequest pullRequest, State oldState, State newState) {
-        NotificationEvent notiEvent = createFrom(sender, pullRequest);
-        notiEvent.title = formatReplyTitle(pullRequest);
-        notiEvent.receivers = getReceivers(sender, pullRequest);
-        notiEvent.eventType = PULL_REQUEST_STATE_CHANGED;
-        notiEvent.oldValue = oldState.state();
-        notiEvent.newValue = newState.state();
-        NotificationEvent.add(notiEvent);
-
-        if (newState == State.MERGED) {
-            webhookRequest(PULL_REQUEST_MERGED, pullRequest);
-        }
-
-        return notiEvent;
-    }
-
-    public static NotificationEvent afterMerge(User sender, PullRequest pullRequest, State state) {
-        NotificationEvent notiEvent = createFrom(sender, pullRequest);
-        notiEvent.title = formatReplyTitle(pullRequest);
-        notiEvent.receivers = state == State.MERGED ? getReceiversWithRelatedAuthors(sender, pullRequest) : getReceivers(sender, pullRequest);
-        notiEvent.eventType = PULL_REQUEST_MERGED;
-        notiEvent.newValue = state.state();
-        NotificationEvent.add(notiEvent);
-        return notiEvent;
-    }
-
-    public static NotificationEvent afterNewPullRequest(PullRequest pullRequest) {
-        webhookRequest(NEW_PULL_REQUEST, pullRequest);
-        return afterNewPullRequest(UserApp.currentUser(), pullRequest);
-    }
-
-    public static NotificationEvent afterPullRequestUpdated(PullRequest pullRequest, State oldState, State newState) {
-        return afterPullRequestUpdated(UserApp.currentUser(), pullRequest, oldState, newState);
     }
 
     public static void afterNewComment(Comment comment) {
@@ -1231,55 +1052,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
     private static String formatReplyTitle(Project project, Commit commit) {
         return String.format("Re: [%s] %s (%s)",
                 project.name, commit.getShortMessage(), commit.getShortId());
-    }
-
-    private static Set<User> getReceivers(User sender, PullRequest pullRequest) {
-        Set<User> watchers = getDefaultReceivers(pullRequest);
-        watchers.remove(sender);
-        return watchers;
-    }
-
-    private static Set<User> getDefaultReceivers(PullRequest pullRequest) {
-        Set<User> watchers = pullRequest.getWatchers();
-        watchers.addAll(getMentionedUsers(pullRequest.body));
-        return watchers;
-    }
-
-    private static Set<User> getReceiversWithRelatedAuthors(User sender, PullRequest pullRequest) {
-        Set<User> receivers = getDefaultReceivers(pullRequest);
-        String failureMessage =
-                "Failed to get authors related to the pullrequest " + pullRequest;
-        try {
-            if (pullRequest.mergedCommitIdFrom != null
-                    && pullRequest.mergedCommitIdTo != null) {
-                receivers.addAll(GitRepository.getRelatedAuthors(
-                        new GitRepository(pullRequest.toProject).getRepository(),
-                        pullRequest.mergedCommitIdFrom,
-                        pullRequest.mergedCommitIdTo));
-            }
-        } catch (LimitExceededException e) {
-            for (ProjectUser member : pullRequest.toProject.members()) {
-                receivers.add(member.user);
-            }
-            play.Logger.info(failureMessage
-                    + ": Get all project members instead", e);
-        } catch (GitAPIException e) {
-            play.Logger.warn(failureMessage, e);
-        } catch (IOException e) {
-            play.Logger.warn(failureMessage, e);
-        }
-        receivers.remove(sender);
-        return receivers;
-    }
-
-    private static String formatNewTitle(PullRequest pullRequest) {
-        return String.format("[%s] %s (#%d)",
-                pullRequest.toProject.name, pullRequest.title, pullRequest.number);
-    }
-
-    private static String formatReplyTitle(PullRequest pullRequest) {
-        return String.format("Re: [%s] %s (#%s)",
-                pullRequest.toProject.name, pullRequest.title, pullRequest.number);
     }
 
     private static Set<User> getReceivers(Project project) {

@@ -123,15 +123,6 @@ public class CommentThread extends Model implements ResourceConvertible {
         reviewComment.thread = this;
     }
 
-    public ReviewComment getFirstReviewComment() {
-        List<ReviewComment> list = ReviewComment.findByThread(this.id);
-        if(!list.isEmpty()) {
-            return list.get(0);
-        }
-
-        throw new IllegalStateException("This thread has no ReviewComment.");
-    }
-
     public static void deleteByPullRequest(PullRequest pullRequest) {
         for(CommentThread commentThread : find.where().eq("pullRequest", pullRequest).findList()) {
             commentThread.delete();

@@ -31,10 +31,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static models.CodeRange.Side;
-import static models.CodeRange.Side.A;
-import static models.CodeRange.Side.B;
-
 /**
  * @author Keesun Baik
  */
@@ -59,18 +55,6 @@ public class CodeCommentThread extends CommentThread {
 
     public boolean isCommitComment() {
         return ObjectUtils.equals(prevCommitId, StringUtils.EMPTY);
-    }
-
-    private String unexpectedSideMessage(Side side) {
-        return String.format("Expected '%s' or '%s', but '%s'", A, B, side);
-    }
-
-    public boolean isOnChangesOfPullRequest() {
-        return isOnPullRequest() && StringUtils.isNotEmpty(commitId);
-    }
-
-    public boolean isOnAllChangesOfPullRequest() {
-        return isOnChangesOfPullRequest() && StringUtils.isNotEmpty(prevCommitId);
     }
 
     public boolean isOutdated() throws IOException, GitAPIException {

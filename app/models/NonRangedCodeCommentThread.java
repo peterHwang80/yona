@@ -36,9 +36,4 @@ public class NonRangedCodeCommentThread extends CommentThread {
 
     public String prevCommitId = StringUtils.EMPTY;
     public String commitId;
-
-    public boolean isOnChangesOfPullRequest() {
-        return isOnPullRequest() && StringUtils.isNotEmpty(commitId);
-    }
-
 }

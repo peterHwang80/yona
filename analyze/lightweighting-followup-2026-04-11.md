@@ -13,6 +13,9 @@
 - `GitRepository`에서 PR 전용 정적 helper를 삭제했다.
   - 제거 예: branch delete/restore, merging repository 생성, `diffCommits(PullRequest)`, `getPatch(PullRequest)`
 - `PullRequestCommit`, `CommitComment`, `CommentThread`에서 commit/PR 전용 dead helper를 추가로 제거했다.
+- `NotificationEvent`에서 더 이상 호출되지 않는 PR/review notification 생성기와 code-review message builder를 제거했다.
+- `NotificationMail`에서 review thread mail-threading과 removed-feature reply-to 생성을 중단했다.
+- `CodeCommentThread`, `NonRangedCodeCommentThread`에서 남아 있던 PR/review dead helper를 추가로 제거했다.
 
 ## 이번 라운드 검증
 
@@ -31,8 +34,8 @@ cmd /c support-script\build-yona.cmd dist
 ## 현재 상태
 
 - surviving-core 기준의 `compile`, `test:compile`, `dist`는 계속 유지되고 있다.
-- 제거 대상 기능의 사용자 노출 경로는 대부분 정리됐고, 이번 라운드에서 모델/저장소 계층의 dead path도 한 단계 더 줄였다.
-- `PullRequest`, `CommentThread`, `CommitComment`, `PullRequestCommit`는 여전히 legacy data 호환용 최소 모델은 남아 있지만, 실제 기능 경로는 크게 축소된 상태다.
+- 제거 대상 기능의 사용자 노출 경로는 대부분 정리됐고, 모델/알림/메일 계층의 dead path도 계속 줄어드는 중이다.
+- `PullRequest`, `CommentThread`, `CommitComment`, `PullRequestCommit`는 legacy data 호환용 최소 모델은 남아 있지만, 실제 기능 경로는 크게 축소된 상태다.
 
 ## 주의
 
@@ -41,7 +44,7 @@ cmd /c support-script\build-yona.cmd dist
 
 ## 다음 우선순위
 
-1. `ReviewComment`, `CodeCommentThread`, `NotificationMail` 쪽의 남은 PR/review 레거시 경로를 더 축소
+1. `AccessControl`, `RouteUtil`, `TemplateHelper`, `Resource` 주변에서 removed resource type 노출을 더 축소
 2. `Project.deletePullRequests()`와 legacy PR data 정리 경계 재점검
 3. `run` 기준 surviving-core 수동 스모크
    - 로그인
