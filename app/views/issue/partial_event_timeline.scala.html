@@ -78,19 +78,8 @@
     }
 }
 
-@linkToPullRequest(pull: PullRequest) = {
-    <strong>@Messages("pullRequest")
-        -@pull.number <span class="link">@pull.title</span></strong>
-}
-
 @linkToProject(owner: String, name: String) = {
     <strong><a href="@routes.ProjectApp.project(owner, name)" class="link">@owner/@name</a></strong>
-}
-
-@linkToCommit(commitId: String) = {
-    <strong>@Messages("code.commits") <span class="link">@{
-        "@"
-    }@commitId</span></strong>
 }
 
 @isAddingEvent(event: IssueEvent) = @{
@@ -112,7 +101,7 @@
             )
 }
 
-@if(event.eventType != ISSUE_BODY_CHANGED) {
+@if(event.eventType != ISSUE_BODY_CHANGED && event.eventType != ISSUE_REFERRED_FROM_COMMIT && event.eventType != ISSUE_REFERRED_FROM_PULL_REQUEST) {
     <li class="event" id="event-@event.id">
         @defining(User.findByLoginId(event.senderLoginId)) { user =>
             @event.eventType match {
@@ -128,19 +117,9 @@
                     <span class="state milestone-changed">@Messages("issue.update.milestone.id")</span>
                     @Html(Messages("issue.event.milestone.changed", linkToUser(user.loginId, user.getDisplayName), linkOfMilestone(event.newValue, project)))
                 }
-                case ISSUE_REFERRED_FROM_COMMIT => {
-                    <span class="state changed">@Messages("issue.event.referred.title")</span>
-                    @Html(Messages("issue.event.referred", linkToUser(user.loginId, user.getDisplayName), linkToCommit(event.newValue)))
-                }
                 case ISSUE_MOVED => {
                     <span class="state changed">@Messages("issue.event.moved.title")</span>
                     @Html(Messages("issue.event.moved", linkToUser(user.loginId, user.getDisplayName), linkToProject(event.oldValue.split("/")(0), event.oldValue.split("/")(1))))
-                }
-                case ISSUE_REFERRED_FROM_PULL_REQUEST => {
-                    <span class="state changed">@Messages("issue.event.referred.title")</span>
-                    @defining(PullRequest.findById(Long.valueOf(event.newValue))) { pull =>
-                        @Html(Messages("issue.event.referred", linkToUser(user.loginId, user.getDisplayName), linkToPullRequest(pull)))
-                    }
                 }
                 case ISSUE_SHARER_CHANGED => {
                     @if(isAddingEvent(event)) {

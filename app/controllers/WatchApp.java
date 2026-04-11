@@ -25,6 +25,7 @@ import models.Unwatch;
 import models.User;
 import models.Watch;
 import models.enumeration.Operation;
+import models.enumeration.ResourceType;
 import models.resource.Resource;
 import models.resource.ResourceParam;
 import play.mvc.Controller;
@@ -35,13 +36,28 @@ import utils.HttpUtil;
 import utils.RouteUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 public class WatchApp extends Controller {
+    private static final Set<ResourceType> SUPPORTED_WATCH_RESOURCES = EnumSet.of(
+            ResourceType.ISSUE_POST,
+            ResourceType.ISSUE_COMMENT,
+            ResourceType.BOARD_POST,
+            ResourceType.NONISSUE_COMMENT,
+            ResourceType.PROJECT
+    );
+
     public static Result watch(ResourceParam resourceParam) {
         User user = UserApp.currentUser();
         Resource resource = resourceParam.resource;
 
         if (user.isAnonymous()) {
             return forbidden("Anonymous cannot watch it.");
+        }
+
+        if (!isSupportedResource(resource)) {
+            return badRequest("Unsupported resource type.");
         }
 
         if (!AccessControl.isAllowed(user, resource, Operation.READ)) {
@@ -60,6 +76,10 @@ public class WatchApp extends Controller {
 
         if (user.isAnonymous()) {
             return forbidden(views.html.error.forbidden.render(Messages.get("issue.error.unwatch.anonymous"), resource.getProject()));
+        }
+
+        if (!isSupportedResource(resource)) {
+            return badRequest("Unsupported resource type.");
         }
 
         if (!AccessControl.isAllowed(user, resource, Operation.READ)) {
@@ -92,13 +112,14 @@ public class WatchApp extends Controller {
             case BOARD_POST:
             case NONISSUE_COMMENT:
                 return Messages.get("post.unwatch.start");
-            case PULL_REQUEST:
-            case REVIEW_COMMENT:
-                return Messages.get("pullRequest.unwatch.start");
             case PROJECT:
                 return Messages.get("project.unwatch.start");
             default:
                 return "";
         }
+    }
+
+    private static boolean isSupportedResource(Resource resource) {
+        return resource != null && SUPPORTED_WATCH_RESOURCES.contains(resource.getType());
     }
 }

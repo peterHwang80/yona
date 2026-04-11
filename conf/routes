@@ -279,7 +279,6 @@ POST           /:user/:project/enroll                                           
 POST           /:user/:project/cancel/enroll                                          controllers.EnrollProjectApp.cancelEnroll(user, project)
 
 # Comment
-DELETE         /comments/:type/:id                                                    controllers.CommentApp.delete(type, id)
 
 # Vote
 POST           /:user/:project/issue/:number/vote                                     controllers.VoteApp.vote(user, project, number: Long)

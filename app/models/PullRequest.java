@@ -310,15 +310,11 @@ public class PullRequest extends Model implements ResourceConvertible {
     }
 
     public void updateWith(PullRequest newPullRequest) {
-        deleteIssueEvents();
-
         this.toBranch = newPullRequest.toBranch;
         this.fromBranch = newPullRequest.fromBranch;
         this.title = newPullRequest.title;
         this.body = newPullRequest.body;
         update();
-
-        addNewIssueEvents();
     }
 
     public boolean hasSameBranchesWith(PullRequest pullRequest) {
@@ -658,7 +654,6 @@ public class PullRequest extends Model implements ResourceConvertible {
     public void save() {
         this.number = nextPullRequestNumber(toProject);
         super.save();
-        addNewIssueEvents();
     }
 
     public static long nextPullRequestNumber(Project project) {

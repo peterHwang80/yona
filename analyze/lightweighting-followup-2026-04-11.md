@@ -6,6 +6,12 @@
 - `NotificationEvent` 내부의 PR/review webhook 분기를 no-op으로 바꿔, removed-feature 이벤트가 webhook 계층으로 전달되지 않게 했다.
 - `Webhook`에서 PR/review 전용 payload builder와 overload 메서드를 삭제했다.
 - `RouteUtil`에서 사용되지 않는 comment-thread 관련 import를 정리했다.
+- generic comment 삭제 route(`/comments/:type/:id`)와 `CommentApp`를 제거했다.
+- `WatchApp`이 surviving-core 범위의 resource type만 처리하도록 제한했다.
+  - 허용 범위: `ISSUE_POST`, `ISSUE_COMMENT`, `BOARD_POST`, `NONISSUE_COMMENT`, `PROJECT`
+- `WatchApp`에서 PR/review 전용 unwatch 메시지 분기를 제거했다.
+- `PullRequest.save()` / `PullRequest.updateWith()`가 더 이상 `ISSUE_REFERRED_FROM_PULL_REQUEST` 이벤트를 새로 만들지 않도록 정리했다.
+- 이슈 타임라인 템플릿에서 `ISSUE_REFERRED_FROM_COMMIT`, `ISSUE_REFERRED_FROM_PULL_REQUEST` 이벤트를 렌더링하지 않도록 정리했다.
 
 ## 테스트 정리
 
@@ -39,6 +45,11 @@ cmd /c support-script\build-yona.cmd test:compile
 - 테스트 소스 컴파일(`test:compile`)
 
 위 세 기준에서, 이번 단계에서 제거한 PR/review/code/import 계열 참조 때문에 막히는 지점은 정리된 상태다.
+
+주의:
+
+- 오래된 sbt 0.13 계열 특성상 `compile`/`test:compile`/`dist`를 병렬로 돌리면 패키징 중 class file 누락이 발생할 수 있다.
+- 검증은 반드시 순차 실행 기준으로 본다.
 
 ## 다음 우선순위
 
