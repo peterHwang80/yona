@@ -22,13 +22,10 @@ package models;
 
 import org.apache.commons.lang3.StringUtils;
 import play.db.ebean.Model;
-import playRepository.GitCommit;
-import utils.JodaDateUtil;
 
 import javax.annotation.Nonnull;
 import javax.persistence.*;
 import java.util.Date;
-import java.util.List;
 
 @Entity
 public class PullRequestCommit extends Model implements TimelineItem {
@@ -112,40 +109,6 @@ public class PullRequestCommit extends Model implements TimelineItem {
                 .orderBy().desc("created")
                 .setMaxRows(1)
                 .findUnique();
-    }
-
-    public static State getStateByCommitId(PullRequest pullRequest, String commitId) {
-        return getByCommitId(pullRequest, commitId).state;
-    }
-
-    public static PullRequestCommit findById(String id) {
-        return find.byId(Long.parseLong(id));
-    }
-
-    public static List<PullRequestCommit> getCurrentCommits(PullRequest pullRequest) {
-        return find.where()
-                .eq("pullRequest", pullRequest)
-                .eq("state", State.CURRENT)
-                .order().desc("created")
-                .findList();
-    }
-
-    public static List<PullRequestCommit> getPriorCommits(PullRequest pullRequest) {
-        return find.where().eq("pullRequest", pullRequest).eq("state", State.PRIOR).findList();
-    }
-
-    public static PullRequestCommit bindPullRequestCommit(GitCommit commit, PullRequest pullRequest) {
-        PullRequestCommit pullRequestCommit = new PullRequestCommit();
-        pullRequestCommit.commitId = commit.getId();
-        pullRequestCommit.commitShortId = commit.getShortId();
-        pullRequestCommit.commitMessage = commit.getMessage();
-        pullRequestCommit.authorEmail = commit.getAuthorEmail();
-        pullRequestCommit.authorDate = commit.getAuthorDate();
-        pullRequestCommit.created = JodaDateUtil.now();
-        pullRequestCommit.state = PullRequestCommit.State.CURRENT;
-        pullRequestCommit.pullRequest = pullRequest;
-
-        return pullRequestCommit;
     }
     public enum State {
         PRIOR, CURRENT

@@ -202,7 +202,7 @@ public class NotificationEvent extends Model implements INotificationEvent {
                     return Messages.get(lang, "notification.organization.member.enroll.cancel");
                 }
             case PULL_REQUEST_REVIEW_STATE_CHANGED:
-                if (PullRequestReviewAction.DONE.name().equals(newValue)) {
+                if ("DONE".equals(newValue)) {
                     return Messages.get(lang, "notification.pullrequest.reviewed", User.find.byId(senderId).loginId);
                 } else {
                     return Messages.get(lang, "notification.pullrequest.unreviewed", User.find.byId(senderId).loginId);
@@ -612,10 +612,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         // Pull request webhooks are removed from the lightweighted product scope.
     }
 
-    private static void webhookRequest(EventType eventTypes, PullRequest pullRequest, PullRequestReviewAction reviewAction) {
-        // Pull request review webhooks are removed from the lightweighted product scope.
-    }
-
     private static void webhookRequest(EventType eventTypes, Issue issue) {
         List<Webhook> webhookList = Webhook.findByProject(issue.project.id);
         for (Webhook webhook : webhookList) {
@@ -762,41 +758,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         notiEvent.oldValue = oldState != null ? oldState.state() : null;
         notiEvent.newValue = issue.state.state();
         NotificationEvent.add(notiEvent);
-        return notiEvent;
-    }
-
-    public static NotificationEvent afterStateChanged(
-            CommentThread.ThreadState oldState, CommentThread thread)
-            throws IOException, SVNException, ServletException {
-        NotificationEvent notiEvent = createFromCurrentUser(thread);
-
-        notiEvent.eventType = REVIEW_THREAD_STATE_CHANGED;
-        notiEvent.oldValue = oldState.name() != null ? oldState.name() : null;
-        notiEvent.newValue = thread.state.name();
-
-        // Set receivers
-        Set<User> receivers;
-        if (thread.isOnPullRequest()) {
-            PullRequest pullRequest = thread.pullRequest;
-            notiEvent.title = formatReplyTitle(pullRequest);
-            receivers = pullRequest.getWatchers();
-        } else {
-            String commitId;
-            if (thread instanceof CodeCommentThread) {
-                commitId = ((CodeCommentThread)thread).commitId;
-            } else {
-                commitId = ((NonRangedCodeCommentThread)thread).commitId;
-            }
-            Project project = thread.project;
-            Commit commit = RepositoryService.getRepository(project).getCommit(commitId);
-            notiEvent.title = formatReplyTitle(project, commit);
-            receivers = commit.getWatchers(project);
-        }
-        receivers.remove(UserApp.currentUser());
-        notiEvent.receivers = receivers;
-
-        NotificationEvent.add(notiEvent);
-
         return notiEvent;
     }
 
@@ -1182,32 +1143,6 @@ public class NotificationEvent extends Model implements INotificationEvent {
         NotificationEvent.add(notiEvent);
 
         webhookRequest(project, commits, refNames, sender, title);
-    }
-
-    public static NotificationEvent afterReviewed(PullRequest pullRequest, PullRequestReviewAction reviewAction) {
-        webhookRequest(EventType.PULL_REQUEST_REVIEW_STATE_CHANGED, pullRequest, reviewAction);
-
-        String title = formatReplyTitle(pullRequest);
-        Resource resource = pullRequest.asResource();
-        Set<User> receivers = pullRequest.getWatchers();
-        receivers.add(pullRequest.contributor);
-        User reviewer = UserApp.currentUser();
-        receivers.remove(reviewer);
-
-        NotificationEvent notiEvent = new NotificationEvent();
-        notiEvent.created = new Date();
-        notiEvent.title = title;
-        notiEvent.senderId = reviewer.id;
-        notiEvent.receivers = receivers;
-        notiEvent.resourceId = resource.getId();
-        notiEvent.resourceType = resource.getType();
-        notiEvent.eventType = EventType.PULL_REQUEST_REVIEW_STATE_CHANGED;
-        notiEvent.oldValue = reviewAction.getOppositAction().name();
-        notiEvent.newValue = reviewAction.name();
-
-        add(notiEvent);
-
-        return notiEvent;
     }
 
     private static String newCommitsMessage(List<RevCommit> commits, List<String> refNames, Project project) {

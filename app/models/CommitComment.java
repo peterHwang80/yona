@@ -78,40 +78,6 @@ public class CommitComment extends CodeComment {
         };
     }
 
-    public static int count(Project project, String commitId, String path){
-        if(path != null){
-            return CommitComment.find.where()
-                    .eq("project.id", project.id)
-                    .eq("commitId", commitId)
-                    .eq("path", path)
-                    .findRowCount();
-        } else {
-            return CommitComment.find.where()
-                    .eq("project.id", project.id)
-                    .eq("commitId", commitId)
-                    .findRowCount();
-        }
-    }
-
-    public static int countByCommits(Project project, List<PullRequestCommit> commits) {
-        int count = 0;
-        for(PullRequestCommit commit: commits) {
-            count += CommitComment.find.where().eq("project.id", project.id)
-                                .eq("commitId", commit.getCommitId())
-                                .findRowCount();
-        }
-
-        return count;
-    }
-
-    public static List<CommitComment> findByCommits(Project project, List<PullRequestCommit> commits) {
-        List<CommitComment> list = new ArrayList<>();
-        for(PullRequestCommit commit: commits) {
-            list.addAll(CommitComment.find.where().eq("project.id", project.id).eq("commitId", commit.getCommitId()).setOrderBy("createdDate asc").findList());
-        }
-        return list;
-    }
-
     public String groupKey() {
         return new StringBuilder().append(this.commitId)
                 .append(this.path).append(this.line).toString();

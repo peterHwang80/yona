@@ -286,10 +286,6 @@ POST           /:user/:project/issue/:number/unvote                             
 POST           /:user/:project/issue/:number/comment/:commentId/vote                  controllers.VoteApp.voteComment(user, project, number: Long, commentId: Long)
 POST           /:user/:project/issue/:number/comment/:commentId/unvote                controllers.VoteApp.unvoteComment(user, project, number: Long, commentId: Long)
 
-# Comment Thread
-POST           /threads/:id/open                                                      controllers.CommentThreadApp.open(id: Long)
-POST           /threads/:id/close                                                     controllers.CommentThreadApp.close(id: Long)
-
 # Markdown Renderer
 POST           /markdown/:user/:project                                               controllers.MarkdownApp.render(user, project)
 

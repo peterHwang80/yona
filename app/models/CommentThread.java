@@ -70,31 +70,6 @@ public class CommentThread extends Model implements ResourceConvertible {
         return pullRequest != null;
     }
 
-    public static List<CommentThread> findByCommitId(String commitId) {
-        return find.where()
-                .eq("commitId", commitId)
-                .order().desc("createdDate")
-                .findList();
-    }
-
-    public static <T extends CommentThread> List<T> findByCommitId(Finder<Long, T> find,
-                                                                   Project project,
-                                                                   String commitId) {
-        return find.where()
-                .eq("commitId", commitId)
-                .eq("project.id", project.id)
-                .order().desc("createdDate")
-                .findList();
-    }
-
-    public static List<CommentThread> findByCommitIdAndState(String commitId, ThreadState state) {
-        return find.where()
-                .eq("commitId", commitId)
-                .eq("state", state)
-                .order().desc("createdDate")
-                .findList();
-    }
-
     @Override
     public String toString() {
         return "CommentThread{" +
@@ -155,63 +130,6 @@ public class CommentThread extends Model implements ResourceConvertible {
         }
 
         throw new IllegalStateException("This thread has no ReviewComment.");
-    }
-
-    public static int count(PullRequest pullRequest, String commitId, String path) {
-        int count = 0;
-
-        for (CommentThread thread : CommentThread.findByCommitId(commitId)) {
-            if (pullRequest != null && thread.pullRequest != pullRequest) {
-                continue;
-            }
-
-            if (path != null && thread instanceof CodeCommentThread
-                    && !((CodeCommentThread)thread).codeRange.path.equals(path)) {
-                continue;
-            }
-
-            count++;
-        }
-
-        return count;
-    }
-
-    public static int countOnCommit(Project project, String commitId, String path) {
-        int count = 0;
-
-        List<CommentThread> threads = find.where()
-                .eq("commitId", commitId)
-                .eq("project.id", project.id)
-                .eq("pullRequest.id", null)
-                .order().desc("createdDate")
-                .findList();
-
-        for (CommentThread thread : threads) {
-            if (path != null && thread instanceof CodeCommentThread
-                    && !((CodeCommentThread)thread).codeRange.path.equals(path)) {
-                continue;
-            }
-
-            count++;
-        }
-
-        return count;
-    }
-
-    public String getChildCommentsSizeToString(){
-        if(this.reviewComments.size() > 1) {
-            return String.valueOf(this.reviewComments.size() - 1);
-        } else {
-            return "";
-        }
-    }
-
-    public boolean hasChildComments(){
-        if(this.reviewComments.size() > 1) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public static void deleteByPullRequest(PullRequest pullRequest) {
