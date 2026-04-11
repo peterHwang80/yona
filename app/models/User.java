@@ -787,21 +787,6 @@ public class User extends Model implements ResourceConvertible {
     }
 
     /**
-     * All user list sent pull-requests at project whose id is {@code projectId}
-     *
-     * @param projectId
-     * @return
-     */
-    public static List<User> findPullRequestContributorsByProjectId(long projectId) {
-        String sql = "SELECT DISTINCT t0.id AS id, t0.name AS name, t0.login_id AS loginId " +
-                "FROM n4user t0 JOIN pull_request t1 ON t0.id = t1.contributor_id";
-        return find.setRawSql(RawSqlBuilder.parse(sql).create()).where()
-                .eq("t1.to_project_id", projectId)
-                .orderBy().asc("t0.name")
-                .findList();
-    }
-
-    /**
      * find users at a project whose id is {@code projectId} and role is {@code roleType}
      *
      * @param projectId

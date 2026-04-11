@@ -146,16 +146,9 @@ public class PullRequest extends Model implements ResourceConvertible {
         return finder.byId(id);
     }
 
-    public static List<PullRequest> findSentPullRequests(Project project) {
+    public static List<PullRequest> findByProject(Project project) {
         return finder.where()
-                .eq("fromProject", project)
-                .order().desc("created")
-                .findList();
-    }
-
-    public static List<PullRequest> allReceivedRequests(Project project) {
-        return finder.where()
-                .eq("toProject", project)
+                .or(eq("fromProject", project), eq("toProject", project))
                 .order().desc("created")
                 .findList();
     }

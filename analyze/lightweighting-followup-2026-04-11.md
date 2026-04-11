@@ -1,28 +1,26 @@
 # Lightweighting Follow-up (2026-04-11)
 
-## 이번 라운드 정리
+## 이번 라운드 요약
 
 - `CommentThreadApp`과 `/threads/:id/open`, `/threads/:id/close` route를 제거했다.
-- `WatchApp`은 이제 surviving-core 범위의 resource type만 처리한다.
-  - 허용 범위: `ISSUE_POST`, `ISSUE_COMMENT`, `BOARD_POST`, `NONISSUE_COMMENT`, `PROJECT`
-- `NotificationEvent`에서 PR/review 전용 reviewer-action dead path를 제거했다.
-- 이슈 타임라인 템플릿에서 `ISSUE_REFERRED_FROM_COMMIT`, `ISSUE_REFERRED_FROM_PULL_REQUEST`를 더 이상 렌더링하지 않도록 정리했다.
-- `PullRequest`에서 더 이상 쓰이지 않는 PR merge/reviewer/query helper를 대거 제거했다.
-  - 제거 예: merge 시뮬레이션, reviewer count helper, PR diff/patch 계산 경로, closed/open query helper
-- `PullRequestMergeResult`, `PullRequestException`를 삭제했다.
-- `GitRepository`에서 PR 전용 정적 helper를 삭제했다.
-  - 제거 예: branch delete/restore, merging repository 생성, `diffCommits(PullRequest)`, `getPatch(PullRequest)`
-- `PullRequestCommit`, `CommitComment`, `CommentThread`에서 commit/PR 전용 dead helper를 추가로 제거했다.
+- `WatchApp`은 surviving-core 범위의 resource type만 처리하도록 줄였다.
+  - 유지 범위: `ISSUE_POST`, `ISSUE_COMMENT`, `BOARD_POST`, `NONISSUE_COMMENT`, `PROJECT`
+- 이슈 이벤트 타임라인 템플릿에서 `ISSUE_REFERRED_FROM_COMMIT`, `ISSUE_REFERRED_FROM_PULL_REQUEST`를 더 이상 렌더링하지 않도록 정리했다.
+- `PullRequest`, `PullRequestCommit`, `CommitComment`, `CommentThread`에서 PR/review/commit 전용 dead helper를 지속적으로 제거했다.
+- `PullRequestMergeResult`, `PullRequestException`을 삭제했다.
+- `GitRepository`에서 PR 전용 helper를 정리했다.
+  - 제거 대상: branch delete/restore, merging repository 생성, `diffCommits(PullRequest)`, `getPatch(PullRequest)`
 - `NotificationEvent`에서 더 이상 호출되지 않는 PR/review notification 생성기와 code-review message builder를 제거했다.
 - `NotificationMail`에서 review thread mail-threading과 removed-feature reply-to 생성을 중단했다.
-- `CodeCommentThread`, `NonRangedCodeCommentThread`에서 남아 있던 PR/review dead helper를 추가로 제거했다.
 - `AccessControl`, `RouteUtil`, `TemplateHelper`, `Resource` 주변에서 removed resource type 노출을 더 줄였다.
-  - `AccessControl`은 `CODE`, `COMMIT`, `COMMIT_COMMENT`, `COMMENT_THREAD`, `PULL_REQUEST`, `REVIEW_COMMENT`, `FORK`를 더 이상 creatable/allowed 대상으로 보지 않는다.
-  - `RouteUtil`은 removed feature resource의 deep-link를 만들지 않고 프로젝트 홈으로만 fallback 한다.
-  - `Resource`는 removed feature resource type에 대해 `exists=false`, `getResourceObject=null`, `findByPath=null`로 안전하게 빠지도록 정리했다.
-  - `TemplateHelper.DiffRenderer`의 미사용 helper를 제거했다.
+  - `CODE`, `COMMIT`, `COMMIT_COMMENT`, `COMMENT_THREAD`, `PULL_REQUEST`, `REVIEW_COMMENT`, `FORK`는 더 이상 creatable/allowed 대상으로 취급하지 않는다.
+  - removed feature resource는 deep-link 대신 프로젝트 URL로 fallback 한다.
+  - removed feature resource type은 `exists=false`, `getResourceObject=null`, `findByPath=null`로 안전하게 무시한다.
+- `Project.deletePullRequests()`는 이제 `PullRequest.findByProject()`를 사용해 프로젝트와 연관된 legacy PR을 한 번만 정리한다.
+  - `fromProject == project`, `toProject == project`가 동시에 성립할 수 있는 경계에서 중복 삭제 루프를 피하도록 단순화했다.
+- 더 이상 사용되지 않는 `User.findPullRequestContributorsByProjectId()`를 제거했다.
 
-## 이번 라운드 검증
+## 검증
 
 아래 명령을 순차 실행해서 모두 통과했다.
 
@@ -38,23 +36,23 @@ cmd /c support-script\build-yona.cmd dist
 
 ## 현재 상태
 
-- surviving-core 기준의 `compile`, `test:compile`, `dist`는 계속 유지되고 있다.
-- 제거 대상 기능의 사용자 노출 경로는 대부분 정리됐고, 모델/알림/메일/권한 계층의 dead path도 계속 줄어드는 중이다.
-- `PullRequest`, `CommentThread`, `CommitComment`, `PullRequestCommit`는 legacy data 호환용 최소 모델은 남아 있지만, 실제 기능 경로는 크게 축소된 상태다.
+- surviving-core 기준으로 `compile`, `test:compile`, `dist`가 계속 유지되고 있다.
+- 제거 대상 기능의 사용자 노출 경로는 대부분 정리되었고, 모델/알림/메일/권한 계층의 레거시 참조도 상당 부분 줄였다.
+- PR/review 관련 모델은 legacy data 호환을 위한 최소 구조만 남아 있으며, 실제 기능 경로는 계속 축소 중이다.
 
 ## 주의
 
-- 현재 sbt 0.13/Play 2.3 계열은 `compile`, `test:compile`, `dist`를 병렬로 돌리면 classfile manager가 깨질 수 있다.
+- 현재 sbt 0.13 / Play 2.3 계열은 `compile`, `test:compile`, `dist`를 병렬로 돌리면 classfile manager 문제가 발생한다.
 - 검증은 반드시 순차 실행 기준으로 유지한다.
 
 ## 다음 우선순위
 
-1. `Project.deletePullRequests()`와 legacy PR data 정리 경계 재점검
-2. `run` 기준 surviving-core 수동 스모크
+1. `run` 기준 surviving-core 수동 스모크
    - 로그인
    - 프로젝트 생성/수정
    - 게시판 글/댓글
    - 이슈 생성/상태 변경/댓글/첨부
    - 알림 조회
    - 웹훅 생성 및 issue 이벤트 발송
-3. 필요 시 `ResourceType`, `EventType`, `MenuType` 등 enum/상수층에서 removed feature 상수를 더 줄일지 검토
+2. `ResourceType`, `EventType`, `MenuType` 등 enum/상수층에서 removed feature 상수를 더 줄일 수 있는지 점검
+3. `PullRequest`, `ReviewComment`, `CodeCommentThread` 계층에서 legacy data 호환을 해치지 않는 범위의 추가 축소 검토
