@@ -52,6 +52,10 @@ public class AccessControl {
             return false;
         }
 
+        if (Resource.isRemovedFeatureResourceType(resourceType)) {
+            return false;
+        }
+
         // Site manager, Group admin, Project members can create anything.
         if (user.isSiteManager()
             || OrganizationUser.isAdmin(project.organization, user)
@@ -71,9 +75,6 @@ public class AccessControl {
         case BOARD_POST:
         case ISSUE_COMMENT:
         case NONISSUE_COMMENT:
-        case FORK:
-        case COMMIT_COMMENT:
-        case REVIEW_COMMENT:
             return true;
         default:
             return false;
@@ -99,6 +100,10 @@ public class AccessControl {
 
     public static boolean isResourceCreatable(User user, Resource container, ResourceType resourceType) {
         if (isAnonymousNotAllowed() && user.isAnonymous()) {
+            return false;
+        }
+
+        if (Resource.isRemovedFeatureResourceType(resourceType)) {
             return false;
         }
 
@@ -313,6 +318,10 @@ public class AccessControl {
     public static boolean isAllowed(User user, Resource resource, Operation operation)
             throws IllegalStateException {
         if (isAnonymousNotAllowed() && user.isAnonymous()) {
+            return false;
+        }
+
+        if (Resource.isRemovedFeatureResourceType(resource.getType())) {
             return false;
         }
 

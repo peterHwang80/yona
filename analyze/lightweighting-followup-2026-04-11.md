@@ -16,6 +16,11 @@
 - `NotificationEvent`에서 더 이상 호출되지 않는 PR/review notification 생성기와 code-review message builder를 제거했다.
 - `NotificationMail`에서 review thread mail-threading과 removed-feature reply-to 생성을 중단했다.
 - `CodeCommentThread`, `NonRangedCodeCommentThread`에서 남아 있던 PR/review dead helper를 추가로 제거했다.
+- `AccessControl`, `RouteUtil`, `TemplateHelper`, `Resource` 주변에서 removed resource type 노출을 더 줄였다.
+  - `AccessControl`은 `CODE`, `COMMIT`, `COMMIT_COMMENT`, `COMMENT_THREAD`, `PULL_REQUEST`, `REVIEW_COMMENT`, `FORK`를 더 이상 creatable/allowed 대상으로 보지 않는다.
+  - `RouteUtil`은 removed feature resource의 deep-link를 만들지 않고 프로젝트 홈으로만 fallback 한다.
+  - `Resource`는 removed feature resource type에 대해 `exists=false`, `getResourceObject=null`, `findByPath=null`로 안전하게 빠지도록 정리했다.
+  - `TemplateHelper.DiffRenderer`의 미사용 helper를 제거했다.
 
 ## 이번 라운드 검증
 
@@ -34,7 +39,7 @@ cmd /c support-script\build-yona.cmd dist
 ## 현재 상태
 
 - surviving-core 기준의 `compile`, `test:compile`, `dist`는 계속 유지되고 있다.
-- 제거 대상 기능의 사용자 노출 경로는 대부분 정리됐고, 모델/알림/메일 계층의 dead path도 계속 줄어드는 중이다.
+- 제거 대상 기능의 사용자 노출 경로는 대부분 정리됐고, 모델/알림/메일/권한 계층의 dead path도 계속 줄어드는 중이다.
 - `PullRequest`, `CommentThread`, `CommitComment`, `PullRequestCommit`는 legacy data 호환용 최소 모델은 남아 있지만, 실제 기능 경로는 크게 축소된 상태다.
 
 ## 주의
@@ -44,12 +49,12 @@ cmd /c support-script\build-yona.cmd dist
 
 ## 다음 우선순위
 
-1. `AccessControl`, `RouteUtil`, `TemplateHelper`, `Resource` 주변에서 removed resource type 노출을 더 축소
-2. `Project.deletePullRequests()`와 legacy PR data 정리 경계 재점검
-3. `run` 기준 surviving-core 수동 스모크
+1. `Project.deletePullRequests()`와 legacy PR data 정리 경계 재점검
+2. `run` 기준 surviving-core 수동 스모크
    - 로그인
    - 프로젝트 생성/수정
    - 게시판 글/댓글
    - 이슈 생성/상태 변경/댓글/첨부
    - 알림 조회
    - 웹훅 생성 및 issue 이벤트 발송
+3. 필요 시 `ResourceType`, `EventType`, `MenuType` 등 enum/상수층에서 removed feature 상수를 더 줄일지 검토

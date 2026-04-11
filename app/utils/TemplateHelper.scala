@@ -287,43 +287,6 @@ object TemplateHelper {
 
   object DiffRenderer {
     def isAuthorComment(commentId: String) = if(commentId == UserApp.currentUser().loginId) "author"
-
-    def shortId(commitId: String) = commitId.substring(0, Math.min(7, commitId.size))
-
-    def urlToCommentThread(thread: CommentThread) = {
-      val container = urlToContainer(thread)
-      if (container == "#") {
-        "#"
-      } else {
-        container + "#thread-" + thread.id
-      }
-    }
-
-    def urlToContainer(thread: CommentThread) = {
-      if (thread == null || thread.project == null) {
-        "#"
-      } else {
-        thread.project.refresh()
-        routes.ProjectApp.project(thread.project.owner, thread.project.name).url
-      }
-    }
-
-    def urlToPostNewComment(thread: CommentThread) = {
-      if (thread == null || thread.project == null) {
-        "#"
-      } else {
-        thread.project.refresh()
-        routes.ProjectApp.project(thread.project.owner, thread.project.name)
-      }
-    }
-
-    def getResourceType(thread: CommentThread) = {
-      if(thread != null && thread.isOnPullRequest){
-        models.enumeration.ResourceType.REVIEW_COMMENT
-      } else {
-        models.enumeration.ResourceType.COMMIT_COMMENT
-      }
-    }
   }
 
   object CodeBrowser {

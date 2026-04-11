@@ -12,17 +12,16 @@ import models.*;
 import models.enumeration.ResourceType;
 import models.resource.Resource;
 
-import utils.TemplateHelper.DiffRenderer$;
-
 public class RouteUtil {
-    public static final DiffRenderer$ diffRenderer = new DiffRenderer$();
-
     public static String getUrl(ResourceType resourceType, String resourceId) {
         return getUrl(resourceType, Long.valueOf(resourceId));
     }
 
     public static String getUrl(ResourceType resourceType, Long longId) {
         try {
+            if (Resource.isRemovedFeatureResourceType(resourceType)) {
+                return getProjectUrlOfRemovedFeatureResource(resourceType, String.valueOf(longId));
+            }
             switch(resourceType) {
                 case ISSUE_POST:
                     return getUrl(Issue.finder.byId(longId));
@@ -32,14 +31,6 @@ public class RouteUtil {
                     return getUrl(PostingComment.find.byId(longId));
                 case BOARD_POST:
                     return getUrl(Posting.finder.byId(longId));
-                case COMMIT_COMMENT:
-                    return getUrl(CommitComment.find.byId(longId));
-                case PULL_REQUEST:
-                    return getUrl(PullRequest.finder.byId(longId));
-                case REVIEW_COMMENT:
-                    return getUrl(ReviewComment.find.byId(longId));
-                case COMMENT_THREAD:
-                    return getUrl(CommentThread.find.byId(longId));
                 case USER_AVATAR:
                     return getUrl(User.find.byId(longId));
                 case PROJECT:
@@ -53,6 +44,11 @@ public class RouteUtil {
         }
 
         return null;
+    }
+
+    private static String getProjectUrlOfRemovedFeatureResource(ResourceType resourceType, String resourceId) {
+        Resource resource = Resource.get(resourceType, resourceId);
+        return resource == null ? null : getUrl(resource.getProject());
     }
 
     public static String getUrl(User user) {
@@ -108,17 +104,6 @@ public class RouteUtil {
         return getUrl(comment.posting) + "#comment-" + comment.id;
     }
 
-    public static String getUrl(PullRequest pullRequest) {
-        if (pullRequest == null) return null;
-        return getUrl(pullRequest.toProject);
-    }
-
-    public static String getUrl(CommitComment comment) {
-        if (comment == null) return null;
-        String projectUrl = getUrl(comment.project);
-        return projectUrl == null ? null : projectUrl + "#comment-" + comment.id;
-    }
-
     public static String getUrl(Comment comment) {
         if (comment == null) return null;
 
@@ -129,21 +114,6 @@ public class RouteUtil {
         }
 
         throw new IllegalArgumentException();
-    }
-
-    public static String getUrl(ReviewComment comment) {
-        if (comment == null) return null;
-
-        CommentThread thread = comment.thread;
-
-        return diffRenderer.urlToContainer(thread) + "#comment-" + comment.id;
-    }
-
-    public static String getUrl(CommentThread thread) {
-        if (thread == null) {
-            return "";
-        }
-        return diffRenderer.urlToContainer(thread) + "#thread-" + thread.id;
     }
 
     public static String getUrl(playRepository.Commit commit, Project project) {

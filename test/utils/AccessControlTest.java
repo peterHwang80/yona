@@ -124,28 +124,28 @@ public class AccessControlTest extends ModelTest<Role>{
         // When & Then
         assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.ISSUE_POST)).describedAs("ISSUE_POST").isTrue();
         assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.BOARD_POST)).describedAs("BOARD_POST").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.COMMENT_THREAD)).describedAs("COMMENT_THREAD").isTrue();
+        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.COMMENT_THREAD)).describedAs("COMMENT_THREAD").isFalse();
         assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.ATTACHMENT)).describedAs("ATTACHMENT").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.COMMIT)).describedAs("COMMIT").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.COMMIT_COMMENT)).describedAs("COMMIT_COMMENT").isTrue();
+        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.COMMIT)).describedAs("COMMIT").isFalse();
+        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.COMMIT_COMMENT)).describedAs("COMMIT_COMMENT").isFalse();
         assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.MILESTONE)).describedAs("MILESTONE").isTrue();
         assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.LABEL)).describedAs("LABEL").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.CODE)).describedAs("CODE").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.PULL_REQUEST)).describedAs("PULL_REQUEST").isTrue();
+        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.CODE)).describedAs("CODE").isFalse();
+        assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.PULL_REQUEST)).describedAs("PULL_REQUEST").isFalse();
         assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.ISSUE_COMMENT)).describedAs("ISSUE_COMMENT").isTrue();
         assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.ISSUE_STATE)).describedAs("ISSUE_STATE").isTrue();
         assertThat(AccessControl.isResourceCreatable(doortts, protectedProject.asResource(), ResourceType.ISSUE_ASSIGNEE)).describedAs("ISSUE_ASSIGNEE").isTrue();
 
         assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.ISSUE_POST)).describedAs("ISSUE_POST").isTrue();
         assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.BOARD_POST)).describedAs("BOARD_POST").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.COMMENT_THREAD)).describedAs("COMMENT_THREAD").isTrue();
+        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.COMMENT_THREAD)).describedAs("COMMENT_THREAD").isFalse();
         assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.ATTACHMENT)).describedAs("ATTACHMENT").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.COMMIT)).describedAs("COMMIT").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.COMMIT_COMMENT)).describedAs("COMMIT_COMMENT").isTrue();
+        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.COMMIT)).describedAs("COMMIT").isFalse();
+        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.COMMIT_COMMENT)).describedAs("COMMIT_COMMENT").isFalse();
         assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.MILESTONE)).describedAs("MILESTONE").isTrue();
         assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.LABEL)).describedAs("LABEL").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.CODE)).describedAs("CODE").isTrue();
-        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.PULL_REQUEST)).describedAs("PULL_REQUEST").isTrue();
+        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.CODE)).describedAs("CODE").isFalse();
+        assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.PULL_REQUEST)).describedAs("PULL_REQUEST").isFalse();
         assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.ISSUE_COMMENT)).describedAs("ISSUE_COMMENT").isTrue();
         assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.ISSUE_STATE)).describedAs("ISSUE_STATE").isTrue();
         assertThat(AccessControl.isResourceCreatable(doortts, publicProject.asResource(), ResourceType.ISSUE_ASSIGNEE)).describedAs("ISSUE_ASSIGNEE").isTrue();

@@ -31,7 +31,25 @@ import utils.Config;
 import java.util.EnumSet;
 
 public abstract class Resource {
+    private static final EnumSet<ResourceType> REMOVED_FEATURE_RESOURCE_TYPES = EnumSet.of(
+            ResourceType.FORK,
+            ResourceType.CODE,
+            ResourceType.COMMIT,
+            ResourceType.COMMIT_COMMENT,
+            ResourceType.PULL_REQUEST,
+            ResourceType.REVIEW_COMMENT,
+            ResourceType.COMMENT_THREAD
+    );
+
+    public static boolean isRemovedFeatureResourceType(ResourceType resourceType) {
+        return REMOVED_FEATURE_RESOURCE_TYPES.contains(resourceType);
+    }
+
     public static boolean exists(ResourceType type, String id) {
+        if (isRemovedFeatureResourceType(type)) {
+            return false;
+        }
+
         Model.Finder<Long, ? extends Model> finder;
 
         switch(type) {
@@ -224,6 +242,10 @@ public abstract class Resource {
      * @see {@link actions.IsAllowedAction}
      */
     public static ResourceConvertible getResourceObject(PathParser parser, Project project, ResourceType resourceType) {
+        if (isRemovedFeatureResourceType(resourceType)) {
+            return null;
+        }
+
         switch (resourceType) {
             case PROJECT:
                 return project;
@@ -268,6 +290,10 @@ public abstract class Resource {
         try {
             resourceType = ResourceType.getValue(segments[0]);
         } catch (IllegalArgumentException e) {
+            return null;
+        }
+
+        if (isRemovedFeatureResourceType(resourceType)) {
             return null;
         }
 
