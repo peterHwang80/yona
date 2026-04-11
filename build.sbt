@@ -82,11 +82,11 @@ val projectSettings = Seq(
   TwirlKeys.templateImports in Compile += "java.util._",
   includeFilter in (Assets, LessKeys.less) := "*.less",
   excludeFilter in (Assets, LessKeys.less) := "_*.less",
-  javaOptions in test ++= Seq("-Xmx2g", "-Xms1g", "-Dfile.encoding=UTF-8"),
-  javaOptions in run ++= envJavaOpt("YONA_DATA", "yona.data"),
-  javaOptions in run ++= envJavaOpt("YONA_PORT", "http.port"),
-  javaOptions in run ++= envJavaOpt("YONA_CONFIG_FILE", "config.file"),
-  javaOptions in run ++= envJavaOpt("YONA_LOGGER_FILE", "logger.file"),
+  javaOptions in Test ++= Seq("-Xmx2g", "-Xms1g", "-Dfile.encoding=UTF-8"),
+  javaOptions in (Compile, run) ++= envJavaOpt("YONA_DATA", "yona.data"),
+  javaOptions in (Compile, run) ++= envJavaOpt("YONA_PORT", "http.port"),
+  javaOptions in (Compile, run) ++= envJavaOpt("YONA_CONFIG_FILE", "config.file"),
+  javaOptions in (Compile, run) ++= envJavaOpt("YONA_LOGGER_FILE", "logger.file"),
   scalacOptions ++= Seq("-feature")
 )
 
@@ -153,4 +153,4 @@ lazy val yobi = (project in file("."))
       )
 
 
-fork in run := true
+fork in (Compile, run) := true
